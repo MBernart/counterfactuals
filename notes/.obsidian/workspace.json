@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "fdc30d7593d4bfb2",
+        "id": "404e88a680738c5e",
         "type": "tabs",
         "children": [
           {
-            "id": "5b37d67da0900f92",
+            "id": "f546db453c4f29bf",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "2025_10_03 Initial research.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "2025_10_03 Initial research"
             }
           }
         ]
@@ -172,6 +176,8 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "5b37d67da0900f92",
-  "lastOpenFiles": []
+  "active": "f546db453c4f29bf",
+  "lastOpenFiles": [
+    "2025_10_03 Initial research.md"
+  ]
 }
