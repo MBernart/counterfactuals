@@ -34,9 +34,23 @@
               "icon": "lucide-file",
               "title": "2025_04_02"
             }
+          },
+          {
+            "id": "9c17b7045bfd89b8",
+            "type": "leaf",
+            "state": {
+              "type": "split-diff-view",
+              "state": {
+                "aFile": "notes/2025_01_03 Initial research.md",
+                "bFile": "notes/2025_01_03 Initial research.md",
+                "aRef": ""
+              },
+              "icon": "diff",
+              "title": "Diff: 2025_01_03 Initial research"
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -93,7 +107,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "right": {
     "id": "7b7db2c48da00ead",
@@ -172,13 +186,23 @@
               "icon": "git-pull-request",
               "title": "Source Control"
             }
+          },
+          {
+            "id": "6a011511ea0e10a1",
+            "type": "leaf",
+            "state": {
+              "type": "advanced-tables-toolbar",
+              "state": {},
+              "icon": "spreadsheet",
+              "title": "Advanced Tables"
+            }
           }
         ],
         "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 407.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -188,14 +212,16 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "obsidian-git:Open Git source control": false
+      "obsidian-git:Open Git source control": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "85bfe7b983824893",
+  "active": "9c17b7045bfd89b8",
   "lastOpenFiles": [
-    "TODO/2025_03_18.md",
+    "2025_04_04 Interface of common lib.md",
+    "2025_01_03 Initial research.md",
     "TODO/2025_04_02.md",
-    "2025_10_03 Initial research.md",
+    "TODO/2025_03_18.md",
     "TODO"
   ]
 }
