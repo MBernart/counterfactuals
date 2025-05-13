@@ -10,6 +10,7 @@ ClassLabel: TypeAlias = int
 class Counterfactual:
     """This is a helper class"""
 
-    data: np.ndarray
+    original_data: np.ndarray # might be useful as well
+    changed_data: np.ndarray
     original_class: ClassLabel
     target_class: ClassLabel
