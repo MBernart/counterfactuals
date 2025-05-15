@@ -28,7 +28,7 @@ class SerializableModel(Model):
 class DummyModel(SerializableModel):
     """A trivial classifier that always returns class 0"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.trained = False
 
     def fit(self, data: Dataset) -> None:

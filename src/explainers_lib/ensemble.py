@@ -10,12 +10,18 @@ class Ensemble:
         self, model: Model, explainers: list[Explainer], aggregator: Aggregator
     ):
         """Constructs an ensemble"""
-        raise NotImplementedError
+        self.model = model
+        self.explainers = explainers
+        self.aggregator = aggregator
 
     def fit(self, data: Dataset) -> None:
         """This method is used to train all explainers in the ensemble"""
-        raise NotImplementedError
+        for explainer in self.explainers:
+            explainer.fit(self.model, data)
 
     def explain(self, data: Dataset) -> list[Counterfactual]:
         """This method is used to generate counterfactuals"""
-        raise NotImplementedError
+        cfs: list[Counterfactual] = []
+        for explainer in self.explainers:
+            cfs.extend(explainer.explain(self.model, data))
+        return self.aggregator(cfs)

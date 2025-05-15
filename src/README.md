@@ -23,3 +23,10 @@ Check [swagger docs](http://127.0.0.1:8000/docs).
 I have also included a notebook with my sample model for tests under `experiments/iris torch.ipynb`. I'd keep it on this branch only.
 
 Ready model can be found here: `src/temp_model.pt`.
+
+# explainers_lib
+
+For local development
+```shell
+pip install -e .
+```

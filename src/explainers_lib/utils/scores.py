@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import numpy.typing as npt
+from typing import Any
 from tqdm import tqdm
 
 class ScoreCalculator:
 
-    def __init__(self, data: npt.NDArray | pd.DataFrame, data_predictions: npt.NDArray, cont_ind: npt.NDArray, cat_ind: npt.NDArray, random_seed: int = 2023) -> None:
+    def __init__(self, data: npt.NDArray[Any], data_predictions: npt.NDArray[Any], cont_ind: npt.NDArray[Any], cat_ind: npt.NDArray[Any], random_seed: int = 2023) -> None:
         '''
         `data`: training data. Cannot containg target columns.
         `data_predictions`: predicted classes for the data.
@@ -25,14 +26,13 @@ class ScoreCalculator:
         self.cat_data = data[:, cat_ind]
 
         # Set ranges
-        self.ranges: npt.NDArray = None
-        self.get_ranges()
+        self.ranges: npt.NDArray[Any] = self.get_ranges()
 
         # Fit flag
         self.fit_done = False
-        self.cfs: npt.NDArray = None
+        self.cfs: npt.NDArray[Any] | None = None
 
-    def fit(self, counterfactuals: npt.NDArray, counterfactuals_predictions: npt.NDArray, x: npt.NDArray, x_predicted_class: float | int) -> None:
+    def fit(self, counterfactuals: npt.NDArray[Any], counterfactuals_predictions: npt.NDArray[Any], x: npt.NDArray[Any]) -> None:
         '''
         counterfactuals: np array of shape (n,m)
         x: one instance of shape (m,)
@@ -65,7 +65,6 @@ class ScoreCalculator:
         self.cfs = counterfactuals
         self.x = x 
         self.cfs_predictions = counterfactuals_predictions
-        self.x_preditions = x_predicted_class
 
         self.fit_done = True
 
@@ -73,17 +72,19 @@ class ScoreCalculator:
 
 
 
-    def get_ranges(self) -> None:
+    def get_ranges(self) -> npt.NDArray[Any]:
         '''
         Get ranges for continous variables.
         Return in form of array([min array, max array])
         '''
         mins = self.cont_data.min(axis=0)
         maxes = self.cont_data.max(axis=0)
-        self.ranges = maxes - mins
+        ranges = maxes - mins
+        assert isinstance(ranges, np.ndarray)
+        return ranges
 
 
-    def heom(self, x: npt.NDArray, y: npt.NDArray) -> float:
+    def heom(self, x: npt.NDArray[Any], y: npt.NDArray[Any]) -> float:
         '''
         Calculate HEOM distance between x and y. 
         X and Y should not be normalized. 
@@ -99,17 +100,18 @@ class ScoreCalculator:
         # Categorical - overlap
         distance += np.sum(~np.equal(x[:, self.cat_ind], y[self.cat_ind]), axis=1)
 
+        assert isinstance(distance, float)
         return distance
 
 
-    def implausibility(self, counterfactuals) -> float:
+    def implausibility(self, counterfactuals: npt.NDArray[Any]) -> float:
         '''
         Implausibility measures the level of feasibility of the set of counterfactuals C, whether they could be realistic to be realized. 
         The generated counterfactual is realistic in the sense that it will be sufficiently close to the reference (training) data X. 
         It could be defined in many ways. This could be implemented as a distance d between generated cf to their nearest real neighbors from X. 
         The lower average distance, the more preferred counterfactual.
         '''
-        pass
+        raise NotImplementedError
 
 
     def feasibility(self) -> float:
@@ -120,6 +122,7 @@ class ScoreCalculator:
         The lower the better
         '''
         best_d = self.distances[:, 0]
+        assert isinstance(best_d, float)
         return best_d
     
 
@@ -134,6 +137,7 @@ class ScoreCalculator:
         
         feas = np.sum(self.distances[:, 0:k_neighbors], axis=1) / k_neighbors
 
+        assert isinstance(feas, float)
         return feas
 
 
@@ -145,6 +149,7 @@ class ScoreCalculator:
 
         The lower the better
         '''
+        assert isinstance(self.cfs, np.ndarray)
         fc = np.zeros(self.cfs.shape[0])
         m = self.cfs.shape[1]
 
@@ -155,7 +160,9 @@ class ScoreCalculator:
             # Categorical
             fc[i] += np.sum(~np.equal(cf[self.cat_ind], self.x[self.cat_ind]))
 
-        return fc / m
+        result = fc / m
+        assert isinstance(result, float)
+        return result
 
 
     def proximity(self) -> float:
@@ -166,6 +173,7 @@ class ScoreCalculator:
 
         The lower the better.
         '''
+        assert isinstance(self.cfs, np.ndarray)
         return self.heom(self.cfs, self.x)
 
 
@@ -177,9 +185,10 @@ class ScoreCalculator:
         '''
         assert self.data.shape[0] > k_neighbors, "Cannot calculate discriminative power because k_neighbors parameter is greater than the number of datapoints"
         rate= np.sum(self.distances_predictions_map[:, 0:k_neighbors] == self.cfs_predictions.reshape(-1, 1), axis=1) / k_neighbors
+        assert isinstance(rate, float)
         return rate
 
-    def dcg(self, preference_ranking: npt.NDArray) -> float:
+    def dcg(self, preference_ranking: npt.NDArray[Any]) -> float:
         '''
         Calculate the adaptation of dcg metric. Calculate the relevance of feature changes among preferred features.
         Changes calculated as featurewise HEOM.
@@ -188,7 +197,7 @@ class ScoreCalculator:
 
         The higher the better
         '''
-
+        assert isinstance(self.cfs, np.ndarray)
         changes = np.zeros_like(self.cfs, dtype='float64')
 
         changes[:, self.cont_ind] += np.abs(self.cfs[:, self.cont_ind].astype('float64') - self.x[self.cont_ind].astype('float64')) / self.ranges
@@ -202,14 +211,15 @@ class ScoreCalculator:
         for i, index in enumerate(preference_ranking, 1):
             dcg_score += changes[:, index] / np.log2(i + 1)
 
+        assert isinstance(dcg_score, float)
         return dcg_score
 
 
-def get_scores(cfs: npt.NDArray, cf_predicted_classes: npt.NDArray,  
-    x: npt.NDArray, x_predicted_class: npt.NDArray,  
-    training_data: pd.DataFrame | npt.NDArray, training_data_predicted_classes: npt.NDArray,  
-    continous_indices: npt.NDArray, categorical_indices: npt.NDArray,  
-    preferences_ranking: npt.NDArray, k_neighbors_feasib: int = 3, 
+def get_scores(cfs: npt.NDArray[Any], cf_predicted_classes: npt.NDArray[Any],  
+    x: npt.NDArray[Any], x_predicted_class: npt.NDArray[Any],  
+    training_data: pd.DataFrame | npt.NDArray[Any], training_data_predicted_classes: npt.NDArray[Any],  
+    continous_indices: npt.NDArray[Any], categorical_indices: npt.NDArray[Any],  
+    preferences_ranking: npt.NDArray[Any], k_neighbors_feasib: int = 3, 
     k_neighbors_discriminative: int = 9
     ) -> pd.DataFrame:
     '''
@@ -238,13 +248,12 @@ def get_scores(cfs: npt.NDArray, cf_predicted_classes: npt.NDArray,
         _training_data = training_data.copy()
     
     # Init score calculator
-    calculator = ScoreCalculator(data=training_data, data_predictions=training_data_predicted_classes, cont_ind=continous_indices, cat_ind=categorical_indices)
+    calculator = ScoreCalculator(data=_training_data, data_predictions=training_data_predicted_classes, cont_ind=continous_indices, cat_ind=categorical_indices)
 
     calculator.fit(
         counterfactuals=cfs,
         counterfactuals_predictions=cf_predicted_classes,
-        x=x,
-        x_predicted_class=x_predicted_class 
+        x=x
     )
 
     feasib = calculator.feasibility()

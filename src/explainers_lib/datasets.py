@@ -1,25 +1,28 @@
-import numpy as np
+from numpy.typing import NDArray
+from typing import Any, Iterator
 import pickle
-
+from .counterfactual import ClassLabel
 
 class Dataset:
     """This is a helper class"""
 
     def __init__(
         self,
-        data: np.ndarray,
+        data: NDArray[Any],
+        target: list[ClassLabel],
         features: list[str],
         immutable_features: list[str],
         categorical_features: list[str],
         allowable_ranges: list[tuple[float, float]],
     ):
         self.data = data
+        self.target = target
         self.features = features
         self.immutable_features = immutable_features
         self.categorical_features = categorical_features
         self.allowable_ranges = allowable_ranges
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[NDArray[Any]]:
         return iter(self.data)
 
 
@@ -27,6 +30,7 @@ class SerializableDataset(Dataset):
     def serialize(self) -> bytes:
         return pickle.dumps({
             'data': self.data,
+            'target': self.target,
             'features': self.features,
             'immutable_features': self.immutable_features,
             'categorical_features': self.categorical_features,
@@ -38,6 +42,7 @@ class SerializableDataset(Dataset):
         obj = pickle.loads(data)
         return SerializableDataset(
             obj['data'],
+            obj['target'],
             obj['features'],
             obj['immutable_features'],
             obj['categorical_features'],
