@@ -5,10 +5,15 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+RUN pip install --upgrade pip
+
+COPY ../../src ./src
+
+RUN pip install -e ./src
+
 COPY . .
 
-RUN pip install --upgrade pip && \
-    pip install -r req.txt
+RUN pip install -r req.txt
 
 EXPOSE 8000
 
