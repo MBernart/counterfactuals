@@ -9,14 +9,18 @@ import torch
 class Explainer:
     """This is an abstract class for an explainer"""
 
-    def fit(self, model: Model, data: Dataset) -> None:
-        """This method is used to fit the explainer"""
-        raise NotImplementedError
+    def __init__(self):
+        pass
 
-    # probably we want to explain (find counterfactuals for) a specific record (can be extended to subset)
-    def explain(self, model: Model, data: Dataset, record: int) -> Sequence[Counterfactual]:
+    def fit(self) -> None:
+        """This method is used to fit the explainer"""
+        pass
+        # raise NotImplementedError
+
+    def explain(self) -> Sequence[Counterfactual]:
         """This method is used generate the counterfactuals"""
-        raise NotImplementedError
+        pass
+        # raise NotImplementedError
 
 
 class RemoteExplainer:
@@ -28,7 +32,7 @@ class RemoteExplainer:
         raise NotImplementedError
 
     def explain(
-        self, model: SerializableModel, data: SerializableDataset, record: int
+        self, model: SerializableModel, data: SerializableDataset, record_nr: int
     ) -> Sequence[Counterfactual]:
         """This method is used generate the counterfactuals"""
         raise NotImplementedError
