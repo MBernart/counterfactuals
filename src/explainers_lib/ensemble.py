@@ -16,7 +16,8 @@ class Ensemble:
 
     def fit(self, data: Dataset) -> None:
         """This method is used to train all explainers in the ensemble"""
-        raise NotImplementedError
+        for explainer in self.explainers:
+            explainer.fit(self.model, data)
 
     # probably want to explain single record at once
     def explain(self, data: Dataset, record_nr: int) -> list[Counterfactual]:

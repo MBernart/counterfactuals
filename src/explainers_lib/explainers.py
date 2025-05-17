@@ -2,8 +2,6 @@ from typing import Sequence
 from .counterfactual import Counterfactual
 from .datasets import Dataset, SerializableDataset
 from .model import Model, SerializableModel
-import numpy as np
-import torch
 
 
 class Explainer:
@@ -24,7 +22,7 @@ class Explainer:
 
 
 class RemoteExplainer:
-    def connect(ip: str) -> None:
+    def connect(self, ip: str) -> None:
         raise NotImplementedError
 
     def fit(self, model: SerializableModel, data: SerializableDataset) -> None:
@@ -36,6 +34,3 @@ class RemoteExplainer:
     ) -> Sequence[Counterfactual]:
         """This method is used generate the counterfactuals"""
         raise NotImplementedError
-    
-# TODO    
-# add already tested explainers

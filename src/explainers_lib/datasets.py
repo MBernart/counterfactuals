@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pickle
-
+from .counterfactual import ClassLabel
 
 class Dataset:
     """This is a helper class"""
@@ -24,7 +24,7 @@ class Dataset:
         self.immutable_features = immutable_features
         self.allowable_ranges = allowable_ranges
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[NDArray[Any]]:
         return iter(self.data)
         
 

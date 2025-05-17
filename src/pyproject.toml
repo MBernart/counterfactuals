@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "explainers_lib"
+requires-python = ">= 3.12"
+dependencies = [
+   "tqdm",
+   "numpy",
+   "EasyMCDM",
+   "pandas",
+]
+dynamic = ["version"]
+authors = [
+  { name = "Piotr Balewski" },
+  { name = "Mateusz Bernart" },
+  { name = "Patryk Janiak" },
+  { name = "Izabela Szczech" },
+]

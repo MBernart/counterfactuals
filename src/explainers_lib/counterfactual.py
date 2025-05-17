@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import TypeAlias, Any
+from numpy.typing import NDArray
 import numpy as np
 
 ClassLabel: TypeAlias = int
