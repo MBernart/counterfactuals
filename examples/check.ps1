@@ -1,1 +1,1 @@
-mypy --strict --follow-untyped-imports .\simple.py ..\src
+mypy --strict --follow-untyped-imports .\ensemble.py .\remote.py ..\src
