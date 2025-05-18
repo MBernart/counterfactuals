@@ -1,13 +1,11 @@
 import json
-from explainers_lib.counterfactual import Counterfactual
+from explainers_lib.counterfactual import ClassLabel, Counterfactual
 from explainers_lib.explainers import Explainer, WorkerFactory
 from explainers_lib.ensemble import Ensemble
 from explainers_lib.datasets import Dataset
-from explainers_lib.model import Model
+from explainers_lib.model import Model, SerializableModel
 import numpy as np
-import torch
 from typing import List, Sequence
-from torch import nn
 
 
 class GrowingSpheresExplainer(Explainer):
@@ -25,28 +23,17 @@ class GrowingSpheresExplainer(Explainer):
 
         # Assuming data is an iterable, for each instance
         for instance in data:
-            # Convert the instance to a PyTorch Tensor
-            instance_tensor = torch.tensor(instance, dtype=torch.float32)
+            instance_ds = Dataset(np.array([instance]), [0], data.features, data.immutable_features, data.categorical_features, data.allowable_ranges)
 
-            # Move the tensor to the same device as the model (if using CUDA)
-            instance_tensor = instance_tensor.to(
-                "cuda" if next(model.parameters()).is_cuda else "cpu"
-            )  # model.device should be 'cpu' or 'cuda'
-
-            # Get the predicted class by passing the instance through the model
-            with torch.no_grad():  # Don't compute gradients during inference
-                preds = model(instance_tensor.unsqueeze(0))  # Add batch dimension
-                original_class = int(torch.argmax(preds))
+            original_class = model.predict(instance_ds)[0]
 
             # Try to find a counterfactual for a different class
-            for target_class in range(model(torch.rand(data[0].shape)).data.shape[0]):
+            for target_class in range(len(set(data.target))):
                 if target_class == original_class:
                     continue
 
                 try:
-                    cf = self._generate_counterfactual(
-                        instance_tensor, model, target_class, original_class
-                    )
+                    cf = self._generate_counterfactual(instance_ds, model, target_class, original_class)
                     counterfactuals.append(cf)
                     break  # Stop after finding the first valid CF
                 except ValueError:
@@ -56,32 +43,30 @@ class GrowingSpheresExplainer(Explainer):
 
     def _generate_counterfactual(
         self,
-        instance: torch.Tensor,
+        instance_ds: Dataset,
         model: Model,
         target_class: int,
         original_class: int,
     ) -> Counterfactual:
         radius = self.step_size
+        instance = next(instance for instance in instance_ds)
         dim = instance.shape[0]
 
         while radius <= self.max_radius:
-            directions = torch.randn(self.num_samples, dim).to(
-                instance.device
-            )  # Ensure same device
-            directions = directions / directions.norm(
-                dim=1, keepdim=True
-            )  # Normalize directions
+            directions = np.random.random((self.num_samples, dim))
+            directions = directions / np.linalg.norm(directions) # unlikely for a random vector to have no length
             candidates = instance + directions * radius
 
+            candidates_ds = Dataset(candidates, [], instance_ds.features, instance_ds.immutable_features, instance_ds.categorical_features, instance_ds.allowable_ranges)
+
             # Get predictions for all candidates
-            preds = model(candidates)  # Model should accept (num_samples, dim)
-            pred_classes = torch.argmax(preds, dim=1)
+            pred_classes = model.predict(candidates_ds)
 
             for i, pred_class in enumerate(pred_classes):
                 if pred_class == target_class:
                     return Counterfactual(
-                        original_data=instance.cpu().numpy(),
-                        changed_data=candidates[i].cpu().numpy(),  # Convert tensor back to numpy array
+                        original_data=instance,
+                        changed_data=candidates[i],
                         original_class=original_class,
                         target_class=target_class,
                     )
@@ -89,7 +74,6 @@ class GrowingSpheresExplainer(Explainer):
             radius += self.step_size
 
         raise ValueError("No counterfactual found within max radius.")
-
 
 from twisted.internet import reactor, protocol, defer, task
 from twisted.protocols.basic import LineReceiver

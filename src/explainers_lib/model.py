@@ -116,3 +116,38 @@ class TFModel(SerializableModel):
             model = tf.keras.models.load_model(path)
 
         return TFModel(model=model, data=None, columns_ohe_order=columns_order)
+
+
+class TorchModel(SerializableModel):
+    def __init__(self, model):
+        self._model = model
+        import torch
+        self._torch = torch
+
+    def fit(self, data: Dataset) -> None:
+        raise NotImplementedError
+
+    def predict(self, data: Dataset) -> list[ClassLabel]:
+        labels = []
+        for instance in data.data:
+            # Convert the instance to a PyTorch Tensor
+            instance_tensor = self._torch.tensor(instance, dtype=self._torch.float32)
+
+            # Move the tensor to the same device as the model (if using CUDA)
+            instance_tensor = instance_tensor.to(
+                "cuda" if next(self._model.parameters()).is_cuda else "cpu"
+            )  # model.device should be 'cpu' or 'cuda'
+
+            # Get the predicted class by passing the instance through the model
+            with self._torch.no_grad():  # Don't compute gradients during inference
+                preds = self._model(instance_tensor.unsqueeze(0))  # Add batch dimension
+                labels.append(int(self._torch.argmax(preds)))
+        return labels
+
+    def serialize(self) -> bytes:
+        raise NotImplementedError
+
+    @staticmethod
+    def deserialize(data: bytes) -> Model:
+        import torch
+        return TorchModel(torch.jit.load(data))
