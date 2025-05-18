@@ -1,7 +1,7 @@
 from typing import Sequence
 from .counterfactual import Counterfactual
 from .datasets import Dataset, SerializableDataset
-from .model import Model, SerializableModel
+from .model import DummyModel, Model, SerializableModel
 
 
 class Explainer:
@@ -20,17 +20,221 @@ class Explainer:
         pass
         # raise NotImplementedError
 
+from twisted.internet import reactor, protocol, defer, task, threads
+from twisted.protocols.basic import LineReceiver
+import pickle
+import sys
+import time
 
-class RemoteExplainer:
-    def connect(self, ip: str) -> None:
-        raise NotImplementedError
+# Worker Server Implementation (Listens for main server connections)
+class WorkerProtocol(LineReceiver):
+    def __init__(self):
+        self.dataset = None
+        self.model = None
+        self.state = "COMMAND"
+        self.current_op = None
+        self.expected_length = 0
+        self.buffer = b''
 
-    def fit(self, model: SerializableModel, data: SerializableDataset) -> None:
-        """This method is used to fit the explainer"""
-        raise NotImplementedError
+    def connectionMade(self):
+        print(f"Main server connected from {self.transport.getPeer()}")
 
-    def explain(
-        self, model: SerializableModel, data: SerializableDataset, record_nr: int
-    ) -> Sequence[Counterfactual]:
-        """This method is used generate the counterfactuals"""
-        raise NotImplementedError
+    def lineReceived(self, line):
+        if self.state == "COMMAND":
+            cmd = line.decode().strip()
+            if cmd.startswith("DATA"):
+                self.current_op = "DATA"
+                self.state = "LENGTH"
+            elif cmd.startswith("MODEL"):
+                self.current_op = "MODEL"
+                self.state = "LENGTH"
+            elif cmd == "TRAIN":
+                self.startTraining()
+            elif cmd == "PREDICT":
+                self.startPrediction()
+            elif cmd == "SHUTDOWN":
+                reactor.stop()
+        elif self.state == "LENGTH":
+            self.expected_length = int(line.decode().strip())
+            self.state = "DATA"
+            self.setRawMode()
+
+    def rawDataReceived(self, data):
+        self.buffer += data
+        if len(self.buffer) >= self.expected_length:
+            payload = self.buffer[:self.expected_length]
+            remaining = self.buffer[self.expected_length:]
+            
+            if self.current_op == "DATA":
+                self.dataset = SerializableDataset.deserialize(payload)
+                print("Received dataset")
+            elif self.current_op == "MODEL":
+                self.model = DummyModel.deserialize(payload)
+                print("Received model")
+            
+            self.buffer = remaining
+            self.state = "COMMAND"
+            self.current_op = None
+            self.setLineMode()
+            if remaining:
+                self.dataReceived(remaining)
+
+    def startTraining(self):
+        if self.dataset and self.model:
+            d = threads.deferToThread(self.trainModel)
+            d.addCallback(lambda _: self.sendResult(b"TRAIN_OK"))
+            d.addErrback(lambda f: self.sendError(f"Training failed: {f}"))
+
+    def trainModel(self):
+        print("Training model...")
+        self.model.fit(self.dataset)
+        return True
+
+    def startPrediction(self):
+        if self.dataset and self.model:
+            d = threads.deferToThread(self.predict)
+            d.addCallback(lambda res: self.sendResult(pickle.dumps(res)))
+            d.addErrback(lambda f: self.sendError(f"Prediction failed: {f}"))
+
+    def predict(self):
+        print("Making predictions...")
+        return self.model.predict(self.dataset)
+
+    def sendResult(self, data):
+        self.sendLine(b"RESULT")
+        self.sendLine(str(len(data)).encode())
+        self.transport.write(data)
+
+    def sendError(self, message):
+        self.sendLine(b"ERROR")
+        self.sendLine(str(len(message)).encode())
+        self.transport.write(message.encode())
+
+class WorkerFactory(protocol.Factory):
+    def buildProtocol(self, addr):
+        return WorkerProtocol()
+
+# Main Server Implementation (Connects to workers)
+class MainServerProtocol(LineReceiver):
+    def __init__(self, dataset, model):
+        self.dataset = dataset
+        self.model = model
+        self.results = []
+        self.operations = []
+        self.timeout = 30  # seconds
+        self.buffer = b''
+        self.expected_length = 0
+        self.current_op = None
+        self.state = "COMMAND"
+
+    def connectionMade(self):
+        print(f"Connected to worker at {self.transport.getPeer()}")
+        self.initOperationQueue()
+
+    def initOperationQueue(self):
+        self.operations = iter([
+            self.sendDataset,
+            self.sendModel,
+            self.sendTrainCommand,
+            self.sendPredictCommand
+        ])
+        reactor.callLater(0, self.nextOperation)
+
+    def nextOperation(self):
+        try:
+            op = next(self.operations)
+            op()
+        except StopIteration:
+            pass
+
+    def sendDataset(self):
+        data = self.dataset.serialize()
+        self.sendLine(b"DATA")
+        self.sendLine(str(len(data)).encode())
+        self.transport.write(data)
+        reactor.callLater(1, self.nextOperation)
+
+    def sendModel(self):
+        model_data = self.model.serialize()
+        self.sendLine(b"MODEL")
+        self.sendLine(str(len(model_data)).encode())
+        self.transport.write(model_data)
+        reactor.callLater(1, self.nextOperation)
+
+    def sendTrainCommand(self):
+        self.sendLine(b"TRAIN")
+        reactor.callLater(1, self.nextOperation)
+
+    def sendPredictCommand(self):
+        self.sendLine(b"PREDICT")
+        self.startTimeout()
+
+    def startTimeout(self):
+        self.timeout_call = reactor.callLater(
+            self.timeout, 
+            self.handleTimeout,
+            self.transport.getPeer()
+        )
+
+    def handleTimeout(self, worker_addr):
+        print(f"Timeout occurred for worker {worker_addr}")
+        self.transport.loseConnection()
+
+    def lineReceived(self, line):
+        cmd = line.decode().strip()
+        if cmd == "RESULT":
+            self.current_op = "RESULT"
+            self.state = "LENGTH"
+        elif cmd == "ERROR":
+            self.state = "ERROR_LENGTH"
+        elif self.state == "LENGTH" or self.state == "ERROR_LENGTH":
+            self.expected_length = int(line.decode().strip())
+            self.state = "DATA"
+            self.setRawMode()
+
+    def rawDataReceived(self, data):
+        self.buffer += data
+        if len(self.buffer) >= self.expected_length:
+            payload = self.buffer[:self.expected_length]
+            remaining = self.buffer[self.expected_length:]
+            
+            if self.current_op == "RESULT":
+                self.handleResult(payload)
+            
+            self.buffer = remaining
+            self.state = "COMMAND"
+            self.current_op = None
+            self.setLineMode()
+            if remaining:
+                self.dataReceived(remaining)
+
+    def handleResult(self, data):
+        try:
+            if data == b'TRAIN_OK':
+                print("Model trained successfully")
+            else:
+                result = pickle.loads(data)
+                self.results.append(result)
+                print(f"Received result: {result}")
+                self.timeout_call.cancel()
+                self.transport.loseConnection()
+        except Exception as e:
+            print(f"Error processing result: {str(e)}")
+
+    def handleError(self, data):
+        error_msg = data.decode()
+        print(f"Error from worker: {error_msg}")
+        self.timeout_call.cancel()
+        self.transport.loseConnection()
+
+class MainServerFactory(protocol.ClientFactory):
+    def __init__(self, dataset, model):
+        self.dataset = dataset
+        self.model = model
+
+    def buildProtocol(self, addr):
+        return MainServerProtocol(self.dataset, self.model)
+
+    def clientConnectionFailed(self, connector, reason):
+        print(f"Connection failed: {reason.getErrorMessage()}")
+        reactor.stop()
