@@ -24,9 +24,8 @@ class GrowingSpheresExplainer(Explainer):
 
         # Assuming data is an iterable, for each instance
         for instance in tqdm(data, unit="instance"):
-            instance_ds = Dataset(np.array([instance]), [0], data.features, data.immutable_features, data.categorical_features, data.allowable_ranges)
 
-            original_class = model.predict(instance_ds)[0]
+            original_class = model.predict(instance)[0]
 
             # Try to find a counterfactual for a different class
             for target_class in range(len(set(data.target))):
@@ -34,7 +33,7 @@ class GrowingSpheresExplainer(Explainer):
                     continue
 
                 try:
-                    cf = self._generate_counterfactual(instance_ds, model, target_class, original_class)
+                    cf = self._generate_counterfactual(instance, model, target_class, original_class)
                     counterfactuals.append(cf)
                     break  # Stop after finding the first valid CF
                 except ValueError:
@@ -50,7 +49,7 @@ class GrowingSpheresExplainer(Explainer):
         original_class: int,
     ) -> Counterfactual:
         radius = self.step_size
-        instance = next(instance for instance in instance_ds)
+        instance = instance_ds.data[0]
         dim = instance.shape[0]
 
         while radius <= self.max_radius:
@@ -58,7 +57,7 @@ class GrowingSpheresExplainer(Explainer):
             directions = directions / np.linalg.norm(directions) # unlikely for a random vector to have no length
             candidates = instance + directions * radius
 
-            candidates_ds = Dataset(candidates, [], instance_ds.features, instance_ds.immutable_features, instance_ds.categorical_features, instance_ds.allowable_ranges)
+            candidates_ds = instance_ds.like(candidates)
 
             # Get predictions for all candidates
             pred_classes = model.predict(candidates_ds)

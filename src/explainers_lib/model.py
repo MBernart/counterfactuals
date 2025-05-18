@@ -1,7 +1,6 @@
 from typing import Dict, List
 from .counterfactual import ClassLabel
 from .datasets import Dataset
-import tensorflow as tf
 import pandas as pd
 import tempfile
 import os
@@ -39,7 +38,9 @@ class SerializableModel(Model):
 
 
 class TFModel(SerializableModel):
-    def __init__(self, model: tf.keras.Model, data: pd.DataFrame, columns_ohe_order: List[str]) -> None:
+    def __init__(self, model: 'tf.keras.Model', data: pd.DataFrame, columns_ohe_order: List[str]) -> None:
+        import tensorflow as tf
+        self._tf = tf
         self._mymodel = model#self.__load_model()
         self.data = data
         self.columns_order = columns_ohe_order
@@ -66,9 +67,9 @@ class TFModel(SerializableModel):
         if isinstance(x, pd.DataFrame):
             x = x[self.feature_input_order].to_numpy()
 
-        if isinstance(x, tf.Variable):
-            with tf.compat.v1.Session() as sess:
-                sess.run(tf.compat.v1.global_variables_initializer())
+        if isinstance(x, self._tf.Variable):
+            with self._tf.compat.v1.Session() as sess:
+                sess.run(self._tf.compat.v1.global_variables_initializer())
                 x = x.eval(session=sess)
 
         return x
@@ -104,6 +105,7 @@ class TFModel(SerializableModel):
 
     @staticmethod
     def deserialize(data: bytes) -> 'TFModel':
+        import tensorflow as tf
         state = pickle.loads(data)
         model_bytes = state['model_bytes']
         columns_order = state['columns_order']

@@ -20,13 +20,13 @@ class Ensemble:
             explainer.fit(self.model, data)
 
     # probably want to explain single record at once
-    def explain(self, data: Dataset, record_nr: int) -> list[Counterfactual]:
+    def explain(self, data: Dataset) -> list[Counterfactual]:
         """This method is used to generate counterfactuals"""
 
         all_counterfactuals = []
         for explainer in self.explainers:
-            cfs = explainer.explain(self.model, data, record_nr) # must be implemented in explainers class
+            cfs = explainer.explain(self.model, data) # must be implemented in explainers class
             all_counterfactuals.extend(cfs)
         
-        filtered_counterfactuals = Aggregator(all_counterfactuals)
+        filtered_counterfactuals = self.aggregator(all_counterfactuals)
         return filtered_counterfactuals

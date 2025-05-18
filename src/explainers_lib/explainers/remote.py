@@ -99,7 +99,7 @@ class RemoteExplainerWorkerFactory(protocol.Factory):
         return RemoteExplainerWorkerProtocol(self.explainer)
 
 class RemoteExplainerProtocol(LineReceiver):
-    def __init__(self, dataset, model):
+    def __init__(self, dataset: SerializableDataset, model):
         self.dataset = dataset
         self.model = model
         self.results = []
@@ -211,7 +211,7 @@ class RemoteExplainerProtocol(LineReceiver):
         self.transport.loseConnection()
 
 class RemoteExplainerFactory(protocol.ClientFactory):
-    def __init__(self, dataset, model):
+    def __init__(self, dataset: SerializableDataset, model):
         self.dataset = dataset
         self.model = model
 

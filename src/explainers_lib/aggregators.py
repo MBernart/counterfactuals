@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod  # proposed by gpt
 from typing import Callable, TypeAlias
 from .counterfactual import Counterfactual
-from utils.scores import get_scores
-from utils.pareto import get_pareto_optimal_mask
+from .utils.scores import get_scores
+from .utils.pareto import get_pareto_optimal_mask
 
 # Aggregator: TypeAlias = Callable[[Sequence[Counterfactual]], Counterfactual]
 

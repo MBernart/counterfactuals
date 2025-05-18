@@ -1,10 +1,11 @@
-from explainers_lib import TorchModel, SerializableDataset as Dataset
+from explainers_lib import TorchModel, SerializableDataset
 from explainers_lib.explainers.remote import RemoteExplainerFactory
 from sklearn.datasets import load_iris
 
 # Loading the data
 iris = load_iris()
-data = Dataset(iris.data[0:2], iris.target, iris.feature_names, [], [], [])
+data = SerializableDataset(iris.data, iris.target, iris.feature_names, [], [], [], [])
+data = data[0:2]
 
 # Load the black box model
 with open("temp_model.pt", "rb") as f:
