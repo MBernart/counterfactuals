@@ -1,11 +1,12 @@
 import json
 from explainers_lib.counterfactual import ClassLabel, Counterfactual
-from explainers_lib.explainers import Explainer, WorkerFactory
+from explainers_lib.explainers import Explainer, RemoteExplainerWorkerFactory
 from explainers_lib.ensemble import Ensemble
 from explainers_lib.datasets import Dataset
 from explainers_lib.model import Model, SerializableModel
 import numpy as np
 from typing import List, Sequence
+from tqdm import tqdm
 
 
 class GrowingSpheresExplainer(Explainer):
@@ -22,7 +23,7 @@ class GrowingSpheresExplainer(Explainer):
         counterfactuals = []
 
         # Assuming data is an iterable, for each instance
-        for instance in data:
+        for instance in tqdm(data, unit="instance"):
             instance_ds = Dataset(np.array([instance]), [0], data.features, data.immutable_features, data.categorical_features, data.allowable_ranges)
 
             original_class = model.predict(instance_ds)[0]
@@ -81,7 +82,9 @@ import pickle
 import sys
 import time
 
-reactor.listenTCP(8000, WorkerFactory())
+explainer = GrowingSpheresExplainer()
+
+reactor.listenTCP(8000, RemoteExplainerWorkerFactory(explainer))
 
 reactor.run()
 

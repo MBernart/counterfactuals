@@ -145,9 +145,20 @@ class TorchModel(SerializableModel):
         return labels
 
     def serialize(self) -> bytes:
-        raise NotImplementedError
+        import io
+
+        buffer = io.BytesIO()
+
+        self._torch.jit.save(self._model, buffer)
+
+        buffer.seek(0)
+        return buffer.read()
 
     @staticmethod
     def deserialize(data: bytes) -> Model:
         import torch
-        return TorchModel(torch.jit.load(data))
+        import io
+
+        buffer = io.BytesIO(data)
+
+        return TorchModel(torch.jit.load(buffer))

@@ -1,8 +1,7 @@
 from typing import Sequence
 from .counterfactual import Counterfactual
 from .datasets import Dataset, SerializableDataset
-from .model import DummyModel, Model, SerializableModel
-
+from .model import DummyModel, Model, SerializableModel, TorchModel
 
 class Explainer:
     """This is an abstract class for an explainer"""
@@ -26,15 +25,15 @@ import pickle
 import sys
 import time
 
-# Worker Server Implementation (Listens for main server connections)
-class WorkerProtocol(LineReceiver):
-    def __init__(self):
+class RemoteExplainerWorkerProtocol(LineReceiver):
+    def __init__(self, explainer: Explainer):
         self.dataset = None
         self.model = None
         self.state = "COMMAND"
         self.current_op = None
         self.expected_length = 0
         self.buffer = b''
+        self.explainer = explainer
 
     def connectionMade(self):
         print(f"Main server connected from {self.transport.getPeer()}")
@@ -50,8 +49,8 @@ class WorkerProtocol(LineReceiver):
                 self.state = "LENGTH"
             elif cmd == "TRAIN":
                 self.startTraining()
-            elif cmd == "PREDICT":
-                self.startPrediction()
+            elif cmd == "EXPLAIN":
+                self.startExplaining()
             elif cmd == "SHUTDOWN":
                 reactor.stop()
         elif self.state == "LENGTH":
@@ -69,7 +68,7 @@ class WorkerProtocol(LineReceiver):
                 self.dataset = SerializableDataset.deserialize(payload)
                 print("Received dataset")
             elif self.current_op == "MODEL":
-                self.model = DummyModel.deserialize(payload)
+                self.model = TorchModel.deserialize(payload) # TODO: introduce ModelFactory
                 print("Received model")
             
             self.buffer = remaining
@@ -86,19 +85,19 @@ class WorkerProtocol(LineReceiver):
             d.addErrback(lambda f: self.sendError(f"Training failed: {f}"))
 
     def trainModel(self):
-        print("Training model...")
-        self.model.fit(self.dataset)
+        print("Training explainer...")
+        self.explainer.fit(self.model, self.dataset)
         return True
 
-    def startPrediction(self):
+    def startExplaining(self):
         if self.dataset and self.model:
-            d = threads.deferToThread(self.predict)
+            d = threads.deferToThread(self.explain)
             d.addCallback(lambda res: self.sendResult(pickle.dumps(res)))
-            d.addErrback(lambda f: self.sendError(f"Prediction failed: {f}"))
+            d.addErrback(lambda f: self.sendError(f"Explanation failed: {f}"))
 
-    def predict(self):
-        print("Making predictions...")
-        return self.model.predict(self.dataset)
+    def explain(self):
+        print("Generating explainations...")
+        return self.explainer.explain(self.model, self.dataset)
 
     def sendResult(self, data):
         self.sendLine(b"RESULT")
@@ -110,12 +109,14 @@ class WorkerProtocol(LineReceiver):
         self.sendLine(str(len(message)).encode())
         self.transport.write(message.encode())
 
-class WorkerFactory(protocol.Factory):
-    def buildProtocol(self, addr):
-        return WorkerProtocol()
+class RemoteExplainerWorkerFactory(protocol.Factory):
+    def __init__(self, explainer: Explainer):
+        self.explainer = explainer
 
-# Main Server Implementation (Connects to workers)
-class MainServerProtocol(LineReceiver):
+    def buildProtocol(self, addr):
+        return RemoteExplainerWorkerProtocol(self.explainer)
+
+class RemoteExplainerProtocol(LineReceiver):
     def __init__(self, dataset, model):
         self.dataset = dataset
         self.model = model
@@ -136,7 +137,7 @@ class MainServerProtocol(LineReceiver):
             self.sendDataset,
             self.sendModel,
             self.sendTrainCommand,
-            self.sendPredictCommand
+            self.sendExplainCommand
         ])
         reactor.callLater(0, self.nextOperation)
 
@@ -165,8 +166,8 @@ class MainServerProtocol(LineReceiver):
         self.sendLine(b"TRAIN")
         reactor.callLater(1, self.nextOperation)
 
-    def sendPredictCommand(self):
-        self.sendLine(b"PREDICT")
+    def sendExplainCommand(self):
+        self.sendLine(b"EXPLAIN")
         self.startTimeout()
 
     def startTimeout(self):
@@ -227,13 +228,13 @@ class MainServerProtocol(LineReceiver):
         self.timeout_call.cancel()
         self.transport.loseConnection()
 
-class MainServerFactory(protocol.ClientFactory):
+class RemoteExplainerFactory(protocol.ClientFactory):
     def __init__(self, dataset, model):
         self.dataset = dataset
         self.model = model
 
     def buildProtocol(self, addr):
-        return MainServerProtocol(self.dataset, self.model)
+        return RemoteExplainerProtocol(self.dataset, self.model)
 
     def clientConnectionFailed(self, connector, reason):
         print(f"Connection failed: {reason.getErrorMessage()}")
