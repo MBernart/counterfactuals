@@ -1,29 +1,11 @@
-from typing import Sequence
-from .counterfactual import Counterfactual
-from .datasets import Dataset, SerializableDataset
-from .model import DummyModel, Model, SerializableModel, TorchModel
 
-class Explainer:
-    """This is an abstract class for an explainer"""
-
-    def __init__(self):
-        pass
-
-    def fit(self) -> None:
-        """This method is used to fit the explainer"""
-        pass
-        # raise NotImplementedError
-
-    def explain(self) -> Sequence[Counterfactual]:
-        """This method is used generate the counterfactuals"""
-        pass
-        # raise NotImplementedError
-
-from twisted.internet import reactor, protocol, defer, task, threads
+from twisted.internet import reactor, protocol, threads
 from twisted.protocols.basic import LineReceiver
 import pickle
-import sys
-import time
+
+from explainers_lib.datasets import SerializableDataset
+from explainers_lib.explainers import Explainer
+from explainers_lib.model import TorchModel
 
 class RemoteExplainerWorkerProtocol(LineReceiver):
     def __init__(self, explainer: Explainer):
@@ -212,7 +194,7 @@ class RemoteExplainerProtocol(LineReceiver):
     def handleResult(self, data):
         try:
             if data == b'TRAIN_OK':
-                print("Model trained successfully")
+                print("Explainer trained successfully")
             else:
                 result = pickle.loads(data)
                 self.results.append(result)
