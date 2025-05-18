@@ -1,5 +1,5 @@
-from explainers_lib import TorchModel, SerializableDataset
-from explainers_lib.explainers.remote import RemoteExplainerFactory
+from explainers_lib import TorchModel, SerializableDataset, Ensemble, Pareto
+from explainers_lib.explainers.remote import RemoteExplainer
 from sklearn.datasets import load_iris
 
 # Loading the data
@@ -13,7 +13,12 @@ with open("temp_model.pt", "rb") as f:
 
 model = TorchModel.deserialize(model_data)
 
-# Run a remote explainer
-from twisted.internet import reactor
-reactor.connectTCP("localhost", 8000, RemoteExplainerFactory(data, model))
-reactor.run()
+# Define the ensemble
+explainer = RemoteExplainer("localhost", 8000)
+ensemble = Ensemble(model=model, explainers=[explainer], aggregator=Pareto())
+
+# Train the ensemble
+ensemble.fit(data)
+
+# Test the ensemble
+ensemble.explain(data[0])

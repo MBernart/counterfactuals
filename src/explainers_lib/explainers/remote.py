@@ -1,11 +1,13 @@
 
+from typing import Sequence
 from twisted.internet import reactor, protocol, threads
 from twisted.protocols.basic import LineReceiver
 import pickle
 
-from explainers_lib.datasets import SerializableDataset
+from explainers_lib.counterfactual import Counterfactual
+from explainers_lib.datasets import Dataset, SerializableDataset
 from explainers_lib.explainers import Explainer
-from explainers_lib.model import TorchModel
+from explainers_lib.model import Model, SerializableModel, TorchModel
 
 class RemoteExplainerWorkerProtocol(LineReceiver):
     def __init__(self, explainer: Explainer):
@@ -98,59 +100,46 @@ class RemoteExplainerWorkerFactory(protocol.Factory):
     def buildProtocol(self, addr):
         return RemoteExplainerWorkerProtocol(self.explainer)
 
+import pickle
+from twisted.internet import reactor, protocol, defer
+from twisted.protocols.basic import LineReceiver
+from twisted.python.threadpool import ThreadPool
+from threading import Thread, Event
+from twisted.internet import threads
+
 class RemoteExplainerProtocol(LineReceiver):
-    def __init__(self, dataset: SerializableDataset, model):
-        self.dataset = dataset
-        self.model = model
-        self.results = []
-        self.operations = []
-        self.timeout = 30  # seconds
+    def __init__(self):
         self.buffer = b''
         self.expected_length = 0
-        self.current_op = None
         self.state = "COMMAND"
+        self.timeout = 30  # seconds
+        self.timeout_call = None
+        self.train_deferred = None
+        self.explain_deferred = None
 
     def connectionMade(self):
         print(f"Connected to worker at {self.transport.getPeer()}")
-        self.initOperationQueue()
 
-    def initOperationQueue(self):
-        self.operations = iter([
-            self.sendDataset,
-            self.sendModel,
-            self.sendTrainCommand,
-            self.sendExplainCommand
-        ])
-        reactor.callLater(0, self.nextOperation)
-
-    def nextOperation(self):
-        try:
-            op = next(self.operations)
-            op()
-        except StopIteration:
-            pass
-
-    def sendDataset(self):
-        data = self.dataset.serialize()
+    def sendData(self, data):
         self.sendLine(b"DATA")
         self.sendLine(str(len(data)).encode())
         self.transport.write(data)
-        reactor.callLater(1, self.nextOperation)
 
-    def sendModel(self):
-        model_data = self.model.serialize()
+    def sendModel(self, model_data):
         self.sendLine(b"MODEL")
         self.sendLine(str(len(model_data)).encode())
         self.transport.write(model_data)
-        reactor.callLater(1, self.nextOperation)
 
-    def sendTrainCommand(self):
+    def sendTrain(self):
         self.sendLine(b"TRAIN")
-        reactor.callLater(1, self.nextOperation)
+        self.train_deferred = defer.Deferred()
+        return self.train_deferred
 
-    def sendExplainCommand(self):
+    def sendExplain(self):
         self.sendLine(b"EXPLAIN")
+        self.explain_deferred = defer.Deferred()
         self.startTimeout()
+        return self.explain_deferred
 
     def startTimeout(self):
         self.timeout_call = reactor.callLater(
@@ -161,6 +150,9 @@ class RemoteExplainerProtocol(LineReceiver):
 
     def handleTimeout(self, worker_addr):
         print(f"Timeout occurred for worker {worker_addr}")
+        if self.explain_deferred:
+            self.explain_deferred.errback(TimeoutError("Explanation timed out"))
+            self.explain_deferred = None
         self.transport.loseConnection()
 
     def lineReceived(self, line):
@@ -183,6 +175,8 @@ class RemoteExplainerProtocol(LineReceiver):
             
             if self.current_op == "RESULT":
                 self.handleResult(payload)
+            elif self.state == "ERROR_LENGTH":
+                self.handleError(payload)
             
             self.buffer = remaining
             self.state = "COMMAND"
@@ -194,30 +188,109 @@ class RemoteExplainerProtocol(LineReceiver):
     def handleResult(self, data):
         try:
             if data == b'TRAIN_OK':
-                print("Explainer trained successfully")
+                if self.train_deferred:
+                    self.train_deferred.callback(True)
+                    self.train_deferred = None
             else:
                 result = pickle.loads(data)
-                self.results.append(result)
-                print(f"Received result: {result}")
-                self.timeout_call.cancel()
-                self.transport.loseConnection()
+                if self.explain_deferred:
+                    self.explain_deferred.callback(result)
+                    self.explain_deferred = None
+                    if self.timeout_call:
+                        self.timeout_call.cancel()
         except Exception as e:
-            print(f"Error processing result: {str(e)}")
+            if self.explain_deferred:
+                self.explain_deferred.errback(e)
+                self.explain_deferred = None
 
     def handleError(self, data):
         error_msg = data.decode()
         print(f"Error from worker: {error_msg}")
-        self.timeout_call.cancel()
+        if self.train_deferred:
+            self.train_deferred.errback(RuntimeError(error_msg))
+            self.train_deferred = None
+        if self.explain_deferred:
+            self.explain_deferred.errback(RuntimeError(error_msg))
+            self.explain_deferred = None
         self.transport.loseConnection()
 
 class RemoteExplainerFactory(protocol.ClientFactory):
-    def __init__(self, dataset: SerializableDataset, model):
-        self.dataset = dataset
-        self.model = model
+    def __init__(self):
+        self.protocol = None
+        self.connected = defer.Deferred()
 
     def buildProtocol(self, addr):
-        return RemoteExplainerProtocol(self.dataset, self.model)
+        self.protocol = RemoteExplainerProtocol()
+        self.connected.callback(self.protocol)
+        return self.protocol
 
     def clientConnectionFailed(self, connector, reason):
-        print(f"Connection failed: {reason.getErrorMessage()}")
+        self.connected.errback(reason)
         reactor.stop()
+
+class RemoteExplainer(Explainer):
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.factory = RemoteExplainerFactory()
+        self.protocol = None
+        self._reactor_thread = None
+        self.connected_event = Event()
+        self._start_reactor()
+
+    def _start_reactor(self):
+        if not reactor.running:
+            self._reactor_thread = Thread(target=reactor.run, args=(False,))
+            self._reactor_thread.daemon = True
+            self._reactor_thread.start()
+        reactor.callFromThread(self._connect)
+
+    def _connect(self):
+        connector = reactor.connectTCP(self.host, self.port, self.factory)
+        self.factory.connected.addCallbacks(self._set_protocol, self._connection_failed)
+
+    def _set_protocol(self, protocol):
+        self.protocol = protocol
+        self.connected_event.set()  # Signal that we're connected
+
+    def _connection_failed(self, reason):
+        print(f"Connection failed: {reason}")
+        reactor.stop()
+
+    def _ensure_connected(self):
+        if not self.connected_event.wait(10):  # Wait up to 10 seconds for connection
+            raise ConnectionError("Failed to connect to server")
+
+    def sendData(self, data: SerializableDataset) -> None:
+        self._ensure_connected()
+        serialized = data.serialize()
+        return threads.blockingCallFromThread(
+            reactor,
+            lambda: self.protocol.sendData(serialized)
+        )
+
+    def sendModel(self, model: SerializableModel) -> None:
+        self._ensure_connected()
+        serialized = model.serialize()
+        return threads.blockingCallFromThread(
+            reactor,
+            lambda: self.protocol.sendModel(serialized)
+        )
+
+    def fit(self, model: SerializableModel, data: SerializableDataset) -> None:
+        self._ensure_connected()
+        self.sendData(data)
+        self.sendModel(model)
+        return threads.blockingCallFromThread(
+            reactor,
+            lambda: self.protocol.sendTrain()
+        )
+
+    def explain(self, model: SerializableModel, data: Dataset) -> Sequence[Counterfactual]:
+        self._ensure_connected()
+        # TODO: figure out when should we send the model and the data
+        self.sendData(data)
+        return threads.blockingCallFromThread(
+            reactor,
+            lambda: self.protocol.sendExplain()
+        )
