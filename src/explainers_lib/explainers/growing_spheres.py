@@ -54,7 +54,7 @@ class GrowingSpheresExplainer(Explainer):
 
         while radius <= self.max_radius:
             directions = np.random.random((self.num_samples, dim))
-            directions = directions / np.linalg.norm(directions) # unlikely for a random vector to have no length
+            directions = directions / np.linalg.norm(directions, axis=1, keepdims=True) # unlikely for a random vector to have no length
             candidates = instance + directions * radius
 
             candidates_ds = instance_ds.like(candidates)
@@ -65,8 +65,7 @@ class GrowingSpheresExplainer(Explainer):
             for i, pred_class in enumerate(pred_classes):
                 if pred_class == target_class:
                     return Counterfactual(
-                        original_data=instance,
-                        changed_data=candidates[i],
+                        data=candidates[i],
                         original_class=original_class,
                         target_class=target_class,
                     )
