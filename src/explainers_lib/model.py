@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Dict, List
 from .counterfactual import ClassLabel
 from .datasets import Dataset
@@ -144,7 +145,7 @@ class TorchModel(SerializableModel):
             with self._torch.no_grad():  # Don't compute gradients during inference
                 preds = self._model(instance_tensor.unsqueeze(0))  # Add batch dimension
                 labels.append(int(self._torch.argmax(preds)))
-        return labels
+        return np.array(labels)
 
     def serialize(self) -> bytes:
         import io

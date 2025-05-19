@@ -38,14 +38,14 @@ class ScoreCalculator:
         x: one instance of shape (m,)
         '''
         mask_without_x = np.ones(self.data.shape[0])
-        
-        x_cont = x[self.cont_ind].astype('float64')
-        x_cat = x[self.cat_ind]
+        x_cont = x[:, self.cont_ind].astype('float64')
+        x_cat = x[:, self.cat_ind]
 
         for i, (cont, cat) in enumerate(zip(self.cont_data, self.cat_data)):
             if np.allclose(x_cont, cont) and np.array_equal(x_cat, cat):
                 mask_without_x[i] = 0
             
+        
         self.data_without_x = self.data[mask_without_x.astype('bool')]
         self.data_predictions_without_x = self.data_predictions[mask_without_x.astype('bool')]
     
@@ -93,14 +93,15 @@ class ScoreCalculator:
         Ranges is max-min on each continous variables (order matters). 
         '''
         distance = np.zeros(x.shape[0])
-
         # Continous |x-y| / range
         distance += np.sum(np.abs(x[:, self.cont_ind].astype('float64') - y[self.cont_ind].astype('float64')) / self.ranges, axis=1)
 
         # Categorical - overlap
-        distance += np.sum(~np.equal(x[:, self.cat_ind], y[self.cat_ind]), axis=1)
+        # HERE WILL BE PROBLEM IN THE FUTURE
+        if self.cat_ind:
+            distance += np.sum(~np.equal(x[:, self.cat_ind], y[self.cat_ind]), axis=1)
 
-        assert isinstance(distance, float)
+        # assert isinstance(distance, float)
         return distance
 
 
@@ -122,7 +123,8 @@ class ScoreCalculator:
         The lower the better
         '''
         best_d = self.distances[:, 0]
-        assert isinstance(best_d, float)
+        # best_d = best_d[0]
+        # assert isinstance(best_d, float)
         return best_d
     
 
@@ -136,8 +138,8 @@ class ScoreCalculator:
         assert self.data.shape[0] > k_neighbors, "Cannot calculate feasibility_k_neighbors because k_neighbors parameter is greater than the number of datapoints"
         
         feas = np.sum(self.distances[:, 0:k_neighbors], axis=1) / k_neighbors
-
-        assert isinstance(feas, float)
+        # feas = feas[0]
+        # assert isinstance(feas, float)
         return feas
 
 
@@ -155,13 +157,15 @@ class ScoreCalculator:
 
         for i, cf in enumerate(self.cfs):
             # Continous
-            fc[i] += np.sum(~np.isclose(cf[self.cont_ind].astype('float64'), self.x[self.cont_ind].astype('float64'), atol=float_precision))
+            fc[i] += np.sum(~np.isclose(cf[self.cont_ind].astype('float64'), self.x[:, self.cont_ind].astype('float64'), atol=float_precision))
 
             # Categorical
-            fc[i] += np.sum(~np.equal(cf[self.cat_ind], self.x[self.cat_ind]))
+            # HERE PROBLEMS AS WELL
+            if self.cat_ind:
+                fc[i] += np.sum(~np.equal(cf[self.cat_ind], self.x[:,self.cat_ind]))
 
         result = fc / m
-        assert isinstance(result, float)
+        # assert isinstance(result, float)
         return result
 
 
@@ -174,7 +178,7 @@ class ScoreCalculator:
         The lower the better.
         '''
         assert isinstance(self.cfs, np.ndarray)
-        return self.heom(self.cfs, self.x)
+        return self.heom(self.cfs, *self.x)
 
 
     def discriminative_power(self, k_neighbors: int = 10) -> float:
@@ -185,7 +189,7 @@ class ScoreCalculator:
         '''
         assert self.data.shape[0] > k_neighbors, "Cannot calculate discriminative power because k_neighbors parameter is greater than the number of datapoints"
         rate= np.sum(self.distances_predictions_map[:, 0:k_neighbors] == self.cfs_predictions.reshape(-1, 1), axis=1) / k_neighbors
-        assert isinstance(rate, float)
+        # assert isinstance(rate, float)
         return rate
 
     def dcg(self, preference_ranking: npt.NDArray[Any]) -> float:
@@ -216,11 +220,9 @@ class ScoreCalculator:
 
 
 def get_scores(cfs: npt.NDArray[Any], cf_predicted_classes: npt.NDArray[Any],  
-    x: npt.NDArray[Any], x_predicted_class: npt.NDArray[Any],  
-    training_data: pd.DataFrame | npt.NDArray[Any], training_data_predicted_classes: npt.NDArray[Any],  
-    continous_indices: npt.NDArray[Any], categorical_indices: npt.NDArray[Any],  
-    preferences_ranking: npt.NDArray[Any], k_neighbors_feasib: int = 3, 
-    k_neighbors_discriminative: int = 9
+    x: npt.NDArray[Any], training_data: pd.DataFrame | npt.NDArray[Any],
+    training_data_predicted_classes: npt.NDArray[Any], continous_indices: npt.NDArray[Any], 
+    categorical_indices: npt.NDArray[Any], k_neighbors_feasib: int = 3, k_neighbors_discriminative: int = 9
     ) -> pd.DataFrame:
     '''
     Obtain metrics evaluation for the data.  
@@ -228,12 +230,10 @@ def get_scores(cfs: npt.NDArray[Any], cf_predicted_classes: npt.NDArray[Any],
     `cfs`: Counterfactuals 
     `cf_predicted_classes`: Counterfactuals predicted classes
     `x`: Original instance corresponding to counterfactuals
-    `x_predicted_class`: Original instance predicted classes (corresponding to counterfactuals)
     `trainig_data`: Data to evaluate. Must be in the non-normalized form. Without target columns.  
-    `trainig_data_predicted_classes`: 1-D array of predicted classes.  
+    `trainig_data_predicted_classes`: 1-D array of predicted classes.
     `continous_indices`: Column indices of conitnous features.    
-    `categorical_indices`: Column indices of categorical features.  
-    `preferences_ranking`: Indices of prefered features ranked from best to worst. Length of this array can be whatever. 
+    `categorical_indices`: Column indices of categorical features.
 
     Important: Len of `continous_indices` + `categorical_indices must` be of length `data`
     '''
@@ -266,15 +266,12 @@ def get_scores(cfs: npt.NDArray[Any], cf_predicted_classes: npt.NDArray[Any],
 
     disc = calculator.discriminative_power(k_neighbors=k_neighbors_discriminative)
 
-    dcg = calculator.dcg(preference_ranking=preferences_ranking)
-
     result = {
         'Proximity': prox,
         'Feasibility': feasib,
         f'K_Feasibility({k_neighbors_feasib})': feasib_k,
         'FeaturesChanged': fc,
-        f'DiscriminativePower({k_neighbors_discriminative})': disc,
-        f'DCG@{len(preferences_ranking)}': dcg
+        f'DiscriminativePower({k_neighbors_discriminative})': disc
     }
 
     scores_df = pd.DataFrame(result)

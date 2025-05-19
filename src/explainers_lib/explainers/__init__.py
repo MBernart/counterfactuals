@@ -6,10 +6,10 @@ from ..model import Model
 class Explainer:
     """This is an abstract class for an explainer"""
 
-    def fit(self, model: Model, data: Dataset) -> None:
+    def fit(self) -> None:
         """This method is used to fit the explainer"""
-        raise NotImplementedError
+        pass
 
-    def explain(self, model: Model, data: Dataset) -> Sequence[Counterfactual]:
+    def explain(self) -> Sequence[Counterfactual]:
         """This method is used generate the counterfactuals"""
-        raise NotImplementedError
+        pass

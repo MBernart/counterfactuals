@@ -25,6 +25,10 @@ class Dataset:
         self.immutable_features = immutable_features
         self.allowable_ranges = allowable_ranges
 
+        self.categorical_features_ids = [features.index(f) for f in categorical_features]
+        self.continuous_features_ids = [features.index(f) for f in continuous_features]
+        self.immutable_features_ids = [features.index(f) for f in immutable_features]
+
     class DatasetIterator:
         def __init__(self, dataset: 'Dataset'):
             self.dataset = dataset
@@ -66,7 +70,9 @@ class SerializableDataset(Dataset):
             'continuous_features': self.continuous_features,
             'immutable_features': self.immutable_features,
             'allowable_ranges': self.allowable_ranges,
-
+            'categorical_features_ids': self.categorical_features_ids,
+            'continuous_features_ids': self.continuous_features_ids,
+            'immutable_features_ids': self.immutable_features_ids
         })
 
     @staticmethod
@@ -80,4 +86,7 @@ class SerializableDataset(Dataset):
             obj['continuous_features'],
             obj['immutable_features'],
             obj['allowable_ranges'],
+            obj['categorical_features_ids'],
+            obj['continuous_features_ids'],
+            obj['immutable_features_ids'],
         )

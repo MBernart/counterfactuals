@@ -4,3 +4,4 @@ from .datasets import *
 from .ensemble import *
 from .explainers import *
 from .model import *
+from .utils import *

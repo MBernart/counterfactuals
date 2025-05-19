@@ -1,4 +1,4 @@
-
+import pandas as pd
 from typing import Sequence
 
 import numpy as np
@@ -19,8 +19,8 @@ class GrowingSpheresExplainer(Explainer):
         # No fitting needed for Growing Spheres
         pass
 
-    def explain(self, model: Model, data: Dataset) -> Sequence[Counterfactual]:
-        counterfactuals = []
+    def explain(self, model: Model, data: Dataset) -> pd.DataFrame:
+        counterfactuals = pd.DataFrame(columns=data.features + ['target'])
 
         # Assuming data is an iterable, for each instance
         for instance in tqdm(data, unit="instance"):
@@ -34,7 +34,7 @@ class GrowingSpheresExplainer(Explainer):
 
                 try:
                     cf = self._generate_counterfactual(instance, model, target_class, original_class)
-                    counterfactuals.append(cf)
+                    counterfactuals = pd.concat([counterfactuals, cf], ignore_index=True)
                     break  # Stop after finding the first valid CF
                 except ValueError:
                     continue  # Try next target class
@@ -47,14 +47,14 @@ class GrowingSpheresExplainer(Explainer):
         model: Model,
         target_class: int,
         original_class: int,
-    ) -> Counterfactual:
+    ) -> pd.DataFrame:
         radius = self.step_size
         instance = instance_ds.data[0]
         dim = instance.shape[0]
 
         while radius <= self.max_radius:
             directions = np.random.random((self.num_samples, dim))
-            directions = directions / np.linalg.norm(directions) # unlikely for a random vector to have no length
+            directions = directions / np.linalg.norm(directions, axis=1, keepdims=True) # unlikely for a random vector to have no length
             candidates = instance + directions * radius
 
             candidates_ds = instance_ds.like(candidates)
@@ -64,12 +64,11 @@ class GrowingSpheresExplainer(Explainer):
 
             for i, pred_class in enumerate(pred_classes):
                 if pred_class == target_class:
-                    return Counterfactual(
-                        original_data=instance,
-                        changed_data=candidates[i],
-                        original_class=original_class,
-                        target_class=target_class,
-                    )
+                    feature_names = instance_ds.features.copy()
+                    feature_names.append("target")
+
+                    row = list(candidates[i]) + [target_class]
+                    return pd.DataFrame([row], columns=feature_names)
 
             radius += self.step_size
 

@@ -5,7 +5,7 @@ from sklearn.datasets import load_iris
 
 # Loading the data
 iris = load_iris()
-data = Dataset(iris.data, iris.target, iris.feature_names, [], [], [], [])
+data = Dataset(iris.data, iris.target, iris.feature_names, [], iris.feature_names, [], [])
 
 # Load the black box model
 with open("temp_model.pt", "rb") as f:
@@ -21,4 +21,4 @@ ensemble = Ensemble(model=model, explainers=[explainer], aggregator=Pareto())
 ensemble.fit(data)
 
 # Test the ensemble
-ensemble.explain(data[0])
+ensemble.explain(data[0], data)
