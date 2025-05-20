@@ -49,7 +49,7 @@ class Pareto(AggregatorBase):
         to_check = np.array([all_x, all_y, all_z], dtype=np.float64).T
         pareto_mask = get_pareto_optimal_mask(data=to_check, optimization_direction=optimization_directions).astype('bool')
 
-        pareto_front = np.array(cfs)[pareto_mask.astype(bool)]
+        pareto_front = np.array([cfs])[pareto_mask.astype(bool)]
         return pareto_front
 
         # raise NotImplementedError

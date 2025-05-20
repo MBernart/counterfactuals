@@ -15,7 +15,7 @@ model = TorchModel.deserialize(model_data)
 
 # Define the ensemble
 explainer = GrowingSpheresExplainer()
-ensemble = Ensemble(model=model, explainers=[explainer], aggregator=Pareto())
+ensemble = Ensemble(model=model, explainers=[explainer] * 3, aggregator=Pareto())
 
 # Train the ensemble
 ensemble.fit(data)
