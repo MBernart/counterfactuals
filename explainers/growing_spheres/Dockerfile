@@ -7,13 +7,13 @@ WORKDIR /app
 
 RUN pip install --upgrade pip
 
-COPY ../../src ./src
+COPY ./src ./src
 
 RUN pip install -e ./src
 
-COPY . .
+COPY ./explainers/growing_spheres/. .
 
-RUN pip install -r req.txt
+RUN pip install -r ./req.txt
 
 EXPOSE 8000
 
