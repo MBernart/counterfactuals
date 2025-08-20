@@ -142,7 +142,8 @@ class WachterExplainer(Explainer):
         random_seed: Optional[int] = None,
     ):
         """
-        Wachter method explainer using mlxtend's create_counterfactual.
+        Wachter method explainer using customized mlxtend's create_counterfactual.
+        Description: https://rasbt.github.io/mlxtend/user_guide/explainers/wachter_explainer/
 
         Args:
             lambda_param: Regularization parameter for distance penalty
