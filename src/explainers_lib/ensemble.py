@@ -5,7 +5,6 @@ from .aggregators import Aggregator
 from .counterfactual import Counterfactual
 from .datasets import Dataset
 from .utils.scores import get_scores
-from .utils.pareto import get_pareto_optimal_mask
 
 
 class Ensemble:
@@ -38,8 +37,8 @@ class Ensemble:
         train_preds = self.model.predict(data)
 
         scores = get_scores(
-            cfs=cfs.drop(columns=['target']).to_numpy().astype('<U11'),
-            cf_predicted_classes=cfs['target'].to_numpy(),
+            cfs=all_counterfactuals.drop(columns=['target']).to_numpy().astype('<U11'),
+            cf_predicted_classes=all_counterfactuals['target'].to_numpy(),
             training_data=data.data,
             training_data_predicted_classes=train_preds,
             x = query_instance.data,
