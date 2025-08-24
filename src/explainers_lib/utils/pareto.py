@@ -11,19 +11,15 @@ def get_pareto_optimal_mask(data: npt.NDArray[Any], optimization_direction: List
 
     return mask to the data with 1 in positions of pareto optimal datapoints 
     '''
-    data_dic = {i: row for i, row in enumerate(data)}
+    data_dic = {i: list(row) for i, row in enumerate(data)}
 
     solver = Pareto(data_dic, verbose=False)
-    result = solver.solve(indexes=list(map(str, range(data.shape[1]))), prefs=optimization_direction)
+    result = solver.solve(indexes=[i for i in range(data.shape[0])], prefs=optimization_direction)
 
-    mask = np.zeros(data.shape[0])
-    
+    mask = np.zeros(data.shape[0], dtype=bool)
     for k, v in result.items():
-        if len(v['Dominated-by']) > 0:
-            mask[int(k)] = False
-        else:
-            mask[int(k)] = True
-
+        mask[int(k)] = len(v['Dominated-by']) == 0
+        
     return mask
 
 def get_ideal_point(data: npt.NDArray[Any], optimization_direction: List[str], pareto_optimal_mask: npt.NDArray[Any]) -> npt.NDArray[Any]:
@@ -46,7 +42,3 @@ def get_ideal_point(data: npt.NDArray[Any], optimization_direction: List[str], p
             ideal_point[i] = np.min(pareto_optimal_data[:, i])
             
     return ideal_point
-
-# if __name__ == '__main__':
-#     get_pareto_optimal_mask(np.array([[0,1,2], [0,0,0], [1,1,1]]), ['max', 'max', 'max'])
-#     print(get_ideal_point(np.array([[0,1,2], [0,0,0], [1,1,1]]), ['max', 'max', 'max'], np.array([1,0,1])))
