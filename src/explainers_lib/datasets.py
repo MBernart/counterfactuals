@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Self
+from typing import Any, Iterator, Optional, Self
 import numpy as np
 from numpy.typing import NDArray
 import pickle
@@ -53,16 +53,20 @@ class Dataset:
     def __getitem__(self, key) -> Self:
         if isinstance(key, slice):
             data = self.data[key.start : key.stop : key.step]
+            target = self.target[key.start : key.stop : key.step]
         elif isinstance(key, int):
             data = self.data[key : key + 1]
+            target = self.target[key : key + 1]
         else:
             raise TypeError("Invalid argument type.")
-        return self.like(data)
+        return self.like(data, target)
 
-    def like(self, data: NDArray[Any]) -> Self:
+    def like(self, data: NDArray[Any], target: Optional[NDArray[Any]] = None) -> Self:
+        if target is None:
+            target = self.target
         return self.__class__(
             data,
-            self.target,
+            target,
             self.features,
             self.categorical_features,
             self.continuous_features,
