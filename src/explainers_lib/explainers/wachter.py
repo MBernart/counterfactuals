@@ -218,7 +218,7 @@ class WachterExplainer(Explainer):
             return Counterfactual(
                 data=counterfactual_data,
                 original_class=original_class,
-                target_class=target_class,
+                target_class=predicted_class,
             )
 
         except Exception as e:
