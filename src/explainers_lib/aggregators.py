@@ -46,6 +46,13 @@ class Pareto(AggregatorBase):
 
 class IdealPoint(AggregatorBase):
     """Computes the ideal point from counterfactuals"""
+    def __init__(self, weights: list[float] = None):
+        """
+        weights: optional list of 3 weights for x, y, z metrics
+        (will be normalized to sum = 1). If None, equal weights are used.
+        """
+        self.weights = weights
+
     def __call__(self, cfs: pd.DataFrame, scores: pd.DataFrame):
             x_metric = 'Proximity'
             y_metric = 'K_Feasibility(3)'
@@ -65,7 +72,17 @@ class IdealPoint(AggregatorBase):
             pareto_data = to_check[pareto_mask]
 
             ideal_point = get_ideal_point(to_check, optimization_direction, pareto_mask)
-            dists = np.linalg.norm(pareto_data - ideal_point, axis=1)
+
+            if self.weights is None:
+                weights = np.ones(to_check.shape[1]) / to_check.shape[1]
+            else:
+                weights = np.array(self.weights, dtype=float)
+                weights = weights / weights.sum()  # normalize
+
+            # weighted distances
+            diffs = pareto_data - ideal_point
+            dists = np.sqrt(np.sum(weights * diffs**2, axis=1))
+            # pick closest
             best_idx = np.argmin(dists)
             return pareto_cfs.iloc[[best_idx]]
 

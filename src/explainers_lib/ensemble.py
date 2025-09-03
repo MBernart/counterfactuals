@@ -36,6 +36,8 @@ class Ensemble:
 
         train_preds = self.model.predict(data)
 
+        # for now it calculates scores for all counterfactuals 
+        # without distingusihing what data point are they explaining
         scores = get_scores(
             cfs=all_counterfactuals.drop(columns=['target']).to_numpy().astype('<U11'),
             cf_predicted_classes=all_counterfactuals['target'].to_numpy(),
