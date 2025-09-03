@@ -15,7 +15,8 @@ model = TorchModel.deserialize(model_data)
 
 # Define the ensemble
 explainer = GrowingSpheresExplainer()
-ensemble = Ensemble(model=model, explainers=[explainer] * 3, aggregator=IdealPoint())
+# weights for proximity, k_feasibility and discriminativepower
+ensemble = Ensemble(model=model, explainers=[explainer] * 3, aggregator=IdealPoint(weights=[4,2,1]))
 
 # Train the ensemble
 ensemble.fit(data)
