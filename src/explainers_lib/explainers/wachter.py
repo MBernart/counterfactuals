@@ -3,6 +3,7 @@ import numpy as np
 from typing import Optional
 from tqdm import tqdm
 
+from explainers_lib.counterfactual import Counterfactual
 from explainers_lib.datasets import Dataset
 from explainers_lib.explainers import Explainer
 from explainers_lib.model import Model
@@ -116,7 +117,7 @@ def create_counterfactual(
         else:
             y_predict = model.predict(
                 Dataset(x_counterfact.reshape(1, -1), [], [], [], [], [], [])
-            )
+            )[0]
 
         diff = lammbda * (y_predict - y_to_be_annealed_to) ** 2
 
@@ -138,12 +139,12 @@ def create_counterfactual(
 class WachterExplainer(Explainer):
     def __init__(
         self,
-        lambda_param: float = 1.0,
+        lambda_param: float = 0.1,
         random_seed: Optional[int] = None,
     ):
         """
         Wachter method explainer using customized mlxtend's create_counterfactual.
-        Description: https://rasbt.github.io/mlxtend/user_guide/explainers/wachter_explainer/
+        Description: https://rasbt.github.io/mlxtend/user_guide/evaluate/create_counterfactual/
 
         Args:
             lambda_param: Regularization parameter for distance penalty
@@ -151,27 +152,34 @@ class WachterExplainer(Explainer):
         """
         self.lambda_param = lambda_param
         self.random_seed = random_seed
+        self.source_df = None
 
     def fit(self, model: Model, data: Dataset) -> None:
         # No fitting needed
-        pass
+        self.source_df = pd.DataFrame(data.data)
+        self.source_df
 
-    def explain(self, model: Model, data: Dataset) -> pd.DataFrame:
-        counterfactuals = pd.DataFrame(columns=data.features + ["target"])
+    def explain(
+        self, model: Model, data: Dataset, y_desired: int = None
+    ) -> list[Counterfactual]:
+        counterfactuals = []
 
         for instance in tqdm(data, unit="instance"):
             original_class = model.predict(instance)[0]
 
-            for target_class in range(len(set(data.target))):
+            target_range = (
+                [y_desired] if y_desired is not None else range(len(set(data.target)))
+            )
+
+            for target_class in target_range:
                 if target_class == original_class:
                     continue
 
                 try:
                     cf = self._generate_counterfactual(instance, model, target_class)
-                    counterfactuals = pd.concat(
-                        [counterfactuals, cf], ignore_index=True
-                    )
-                    break
+                    if cf is not None:
+                        counterfactuals.append(cf)
+                        break
                 except ValueError as e:
                     continue
 
@@ -182,42 +190,43 @@ class WachterExplainer(Explainer):
         instance_ds: Dataset,
         model: Model,
         target_class: int,
-    ) -> pd.DataFrame:
+    ) -> Optional[Counterfactual]:
         """
         Generate a counterfactual using the Wachter method.
         """
         instance = instance_ds.data[0]
+        original_class = model.predict(instance_ds)[0]
 
         try:
-            counterfactual = create_counterfactual(
+            counterfactual_data = create_counterfactual(
                 x_reference=instance,
                 y_desired=target_class,
                 model=model,
-                X_dataset=instance_ds.data.copy(),
+                X_dataset=self.source_df.values,
                 lammbda=self.lambda_param,
                 random_seed=self.random_seed,
             )
 
-            cf_ds = instance_ds.like(counterfactual.reshape(1, -1))
-            predicted_class = model.predict(cf_ds)
+            cf_ds = instance_ds.like(counterfactual_data.reshape(1, -1))
+            predicted_class = model.predict(cf_ds)[0]
 
             if predicted_class != target_class:
                 raise ValueError(
                     "Generated counterfactual does not produce target class"
                 )
 
-            feature_names = instance_ds.features.copy()
-            feature_names.append("target")
-
-            row = list(counterfactual) + [target_class]
-            return pd.DataFrame([row], columns=feature_names)
+            return Counterfactual(
+                data=counterfactual_data,
+                original_class=original_class,
+                target_class=predicted_class,
+            )
 
         except Exception as e:
             raise ValueError(f"Failed to generate counterfactual: {str(e)}")
 
     def explain_instance(
         self, instance_ds: Dataset, model: Model, target_class: Optional[int] = None
-    ) -> Optional[pd.DataFrame]:
+    ) -> Optional[Counterfactual]:
         original_class = model.predict(instance_ds)[0]
 
         if target_class is not None:
