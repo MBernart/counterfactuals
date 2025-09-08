@@ -1,6 +1,9 @@
 name: "Build & Push Explainers"
 
 on:
+  push:
+    branches:
+      - 30-explainer-image-push-to-registry
   workflow_dispatch:
     inputs:
       explainer:
