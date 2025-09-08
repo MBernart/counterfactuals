@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      explainer:
+        description: 'Which explainer(s) to build?'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - growing_spheres
+        - wachter
+      tag:
+        description: 'Docker tag to use'
+        required: true
+        default: ''
+        type: string
+      push_to_registry:
+        description: 'Push to registry?'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        explainer: ${{ 
+          github.event.inputs.explainer == 'all' && 
+          fromJSON('["growing_spheres", "wachter"]') || 
+          fromJSON(format('["{0}"]', github.event.inputs.explainer)) 
+        }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_REGISTRY_URL }}/counterfactuals-${{ matrix.explainer }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event.inputs.tag != '' && github.event.inputs.tag != 'latest' }}
+            type=sha
+
+      - name: Login to CFE Registry
+        if: ${{ github.event.inputs.push_to_registry == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./explainers/${{ matrix.explainer }}/Dockerfile
+          push: ${{ github.event.inputs.push_to_registry == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
