@@ -4,6 +4,26 @@ on:
   push:
     branches:
       - 30-explainer-image-push-to-registry
+    inputs:
+    explainer:
+      description: 'Which explainer(s) to build?'
+      required: true
+      default: 'all'
+      type: choice
+      options:
+      - all
+      - growing_spheres
+      - wachter
+    tag:
+      description: 'Docker tag to use'
+      required: true
+      default: ''
+      type: string
+    push_to_registry:
+      description: 'Push to registry?'
+      required: true
+      default: false
+      type: boolean
   workflow_dispatch:
     inputs:
       explainer:
