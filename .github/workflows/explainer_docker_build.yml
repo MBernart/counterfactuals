@@ -55,7 +55,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          if [ "${{ github.event.inputs.explainer }}" = "all" ]; then
+          if [ "all" = "all" ]; then
             echo 'matrix=["growing_spheres","wachter"]' >> $GITHUB_OUTPUT
           else
             echo "matrix=[\"${{ github.event.inputs.explainer }}\"]" >> $GITHUB_OUTPUT
