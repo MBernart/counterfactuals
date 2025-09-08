@@ -1,29 +1,6 @@
 name: "Build & Push Explainers"
 
 on:
-  push:
-    branches:
-      - 30-explainer-image-push-to-registry
-    inputs:
-    explainer:
-      description: 'Which explainer(s) to build?'
-      required: true
-      default: 'all'
-      type: choice
-      options:
-      - all
-      - growing_spheres
-      - wachter
-    tag:
-      description: 'Docker tag to use'
-      required: true
-      default: ''
-      type: string
-    push_to_registry:
-      description: 'Push to registry?'
-      required: true
-      default: false
-      type: boolean
   workflow_dispatch:
     inputs:
       explainer:
@@ -55,7 +32,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          if [ "all" = "all" ]; then
+          if [ "${{ github.event.inputs.explainer }}" = "all" ]; then
             echo 'matrix=["growing_spheres","wachter"]' >> $GITHUB_OUTPUT
           else
             echo "matrix=[\"${{ github.event.inputs.explainer }}\"]" >> $GITHUB_OUTPUT
@@ -88,7 +65,7 @@ jobs:
             type=sha
 
       - name: Login to CFE Registry
-        if: ${{ 'true' == 'true' }}
+        if: ${{ github.event.inputs.push_to_registry == 'true' }}
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.DOCKER_REGISTRY_URL }}
@@ -100,7 +77,7 @@ jobs:
         with:
           context: .
           file: ./explainers/${{ matrix.explainer }}/Dockerfile
-          push: ${{ 'true' == 'true' }}
+          push: ${{ github.event.inputs.push_to_registry == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
