@@ -24,15 +24,28 @@ on:
         type: boolean
 
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.explainer }}" = "all" ]; then
+            echo 'matrix=["growing_spheres","wachter"]' >> $GITHUB_OUTPUT
+          else
+            echo "matrix=[\"${{ github.event.inputs.explainer }}\"]" >> $GITHUB_OUTPUT
+          fi
+
+
   docker:
+    needs: set-matrix
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        explainer: ${{ 
-          github.event.inputs.explainer == 'all' && 
-          fromJSON('["growing_spheres", "wachter"]') || 
-          fromJSON(format('["{0}"]', github.event.inputs.explainer)) 
-        }}
+        explainer: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
+
     
     steps:
       - name: Checkout
