@@ -1,4 +1,4 @@
-name: ci
+name: "Build & Push Explainers"
 
 on:
   workflow_dispatch:
