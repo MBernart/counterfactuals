@@ -53,10 +53,14 @@ class Dataset:
     def __getitem__(self, key) -> Self:
         if isinstance(key, slice):
             data = self.data[key.start : key.stop : key.step]
-            target = self.target[key.start : key.stop : key.step]
+            target = (
+                self.target[key.start : key.stop : key.step]
+                if self.target is not None
+                else None
+            )
         elif isinstance(key, int):
             data = self.data[key : key + 1]
-            target = self.target[key : key + 1]
+            target = self.target[key : key + 1] if self.target is not None else None
         else:
             raise TypeError("Invalid argument type.")
         return self.like(data, target)
