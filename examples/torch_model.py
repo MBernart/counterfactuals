@@ -1,5 +1,5 @@
 from explainers_lib.model import TorchModel
-from explainers_lib import SerializableDataset, Dataset, ClassLabel
+from explainers_lib import SerializableDataset
 import numpy as np
 from pprint import pprint
 
