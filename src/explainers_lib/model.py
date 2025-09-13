@@ -1,5 +1,6 @@
 import numpy as np
-from typing import Dict, List
+from numpy.typing import NDArray
+from typing import List, Any
 from .counterfactual import ClassLabel
 from .datasets import Dataset
 import pandas as pd
@@ -24,6 +25,10 @@ class Model:
         pass
         # raise NotImplementedError
 
+    def predict_proba(self, x) -> np.ndarray:
+        """This method is used to predict the class probabilities of instances"""
+        pass
+        # raise NotImplementedError
 
 
 class SerializableModel(Model):
@@ -74,20 +79,20 @@ class TFModel(SerializableModel):
                 x = x.eval(session=sess)
 
         return x
+
     # The predict function outputs
     # the continuous prediction of the model
     def predict(self, x):
         x = self._prepare_input(x)
         return self._mymodel.predict(x)
-
-        
+    
     # @tf.function(experimental_relax_shapes=True)
     # def predictTensor(self, x):
     #     self._mymodel.predict(x, steps=1)
 
     # The predict_proba method outputs
     # the prediction as class probabilities
-    def predict_proba(self, x):
+    def predict_proba(self, x) -> np.ndarray:
         x = self._prepare_input(x)
         return self._mymodel.predict(x)
     
@@ -146,6 +151,16 @@ class TorchModel(SerializableModel):
                 preds = self._model(instance_tensor.unsqueeze(0))  # Add batch dimension
                 labels.append(int(self._torch.argmax(preds)))
         return np.array(labels)
+
+    def predict_proba(self, data: NDArray[Any]) -> np.ndarray:
+        data = self._torch.tensor(data.data, dtype=self._torch.float32)
+        data = data.to("cuda" if next(self._model.parameters()).is_cuda else "cpu")
+
+        with self._torch.no_grad():
+            logits = self._model(data)
+            probabilities = self._torch.nn.functional.softmax(logits, dim=1)
+
+        return probabilities.cpu().numpy()
 
     def serialize(self) -> bytes:
         import io
