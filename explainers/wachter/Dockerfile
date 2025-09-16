@@ -1,22 +1,44 @@
-# Steps like for growing_spheres explainer
+FROM python:3.13-slim AS builder
 
-FROM python:3.13.7-slim
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      gcc libc6-dev \
+ && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /build
 
-RUN pip install --upgrade pip
+COPY ./explainers/wachter/req.txt ./req.txt
+RUN pip install --no-cache-dir --no-compile --target /opt/pip-packages -r req.txt
 
 COPY ./src ./src
+RUN cd ./src && pip install --no-cache-dir --no-compile --target /opt/pip-packages .
 
-RUN pip install -e ./src
+RUN find /opt/pip-packages -type d -name "__pycache__" -exec rm -rf {} + \
+ && find /opt/pip-packages -type d -name "tests" -exec rm -rf {} + \
+ && rm -rf /opt/pip-packages/pip* /opt/pip-packages/setuptools* /opt/pip-packages/wheel* \
+ && find /opt/pip-packages -type f -name "*.pyc" -delete
 
-COPY ./explainers/wachter/. .
+FROM python:3.13-slim
 
-RUN pip install -r ./req.txt
+ENV PYTHONPATH=/opt/pip-packages:/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      libgomp1 libgfortran5 \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/pip-packages /opt/pip-packages
+
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+
+WORKDIR /app
+COPY --chown=appuser:appgroup ./explainers/wachter/ ./
+
+USER appuser
 EXPOSE 8000
-
 CMD ["python", "main.py"]
