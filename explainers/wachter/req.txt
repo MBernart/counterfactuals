@@ -1,3 +1,5 @@
+# kept only for ease of local development
+
 attrs==25.3.0
 Automat==25.4.16
 constantly==23.10.4
