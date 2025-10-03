@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import TypeAlias, Any
 from numpy.typing import NDArray
 import numpy as np
+import pickle
 
 ClassLabel: TypeAlias = int
 
@@ -14,3 +15,10 @@ class Counterfactual:
     data: np.ndarray
     original_class: ClassLabel
     target_class: ClassLabel
+
+    def serialize(self) -> bytes:
+        return pickle.dumps(self)
+
+    @staticmethod
+    def deserialize(data: bytes) -> "Counterfactual":
+        return pickle.loads(data)
