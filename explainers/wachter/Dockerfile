@@ -25,7 +25,8 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./explainers/wachter/main.py ./main.py
+COPY ./common ./common
+COPY ./explainers ./explainers
 
 USER app
 
@@ -33,4 +34,4 @@ ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 
-CMD ["python", "main.py"]
+CMD ["celery", "-A", "common.celery_app", "worker", "-l", "info", "-Q", "wachter,celery"]

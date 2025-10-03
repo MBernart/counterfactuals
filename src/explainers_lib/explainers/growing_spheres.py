@@ -19,8 +19,8 @@ class GrowingSpheresExplainer(Explainer):
         # No fitting needed for Growing Spheres
         pass
 
-    def explain(self, model: Model, data: Dataset) -> pd.DataFrame:
-        counterfactuals = pd.DataFrame(columns=data.features + ['target'])
+    def explain(self, model: Model, data: Dataset) -> list[Counterfactual]:
+        counterfactuals: list[Counterfactual] = []
 
         # Assuming data is an iterable, for each instance
         for instance in tqdm(data, unit="instance"):
@@ -34,7 +34,7 @@ class GrowingSpheresExplainer(Explainer):
 
                 try:
                     cf = self._generate_counterfactual(instance, model, target_class, original_class)
-                    counterfactuals = pd.concat([counterfactuals, cf], ignore_index=True)
+                    counterfactuals.append(Counterfactual(cf.to_numpy(), original_class, target_class))
                     break  # Stop after finding the first valid CF
                 except ValueError:
                     continue  # Try next target class
