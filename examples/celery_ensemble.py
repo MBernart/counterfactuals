@@ -15,8 +15,8 @@
 # docker pull cfe.cs.put.poznan.pl/counterfactuals-wachter
 # docker pull cfe.cs.put.poznan.pl/counterfactuals-growing-spheres
 
-from explainers_lib.ensemble import CeleryEnsemble
 from explainers_lib.datasets import Dataset
+from explainers_lib.ensemble import Ensemble
 from explainers_lib.explainers.celery_explainer import CeleryExplainer
 from explainers_lib.model import TorchModel
 from sklearn.datasets import load_iris
@@ -54,8 +54,8 @@ with open("temp_model.pt", "rb") as f:
 model = TorchModel.deserialize(model_data)
 
 # Ensemble
-ensemble = CeleryEnsemble(model, [CeleryExplainer("wachter"), CeleryExplainer("growing_spheres")])
-print(f"Used explainers: {[explainer.explainer_name for explainer in ensemble.explainers]}")
+ensemble = Ensemble(model, [CeleryExplainer("wachter"), CeleryExplainer("growing_spheres")])
+print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
 
 ensemble.fit(data)
 print(f"Ensemble fitting complete")
