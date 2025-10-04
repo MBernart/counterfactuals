@@ -25,7 +25,6 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./common ./common
 COPY ./explainers ./explainers
 
 USER app
