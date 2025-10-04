@@ -1,11 +1,10 @@
-from explainers_lib import TorchModel, SerializableDataset
-from explainers_lib.explainers.remote import RemoteExplainerFactory
+from explainers_lib import TorchModel, Dataset
+from explainers_lib.explainers.celery_explainer import CeleryExplainer
 import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-from twisted.internet import reactor
 
 iris = load_iris()
 
@@ -34,7 +33,10 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-data = SerializableDataset(X_test, y_test, iris.feature_names, [], [], [], [])[:10]
+data = Dataset(X_test, y_test, iris.feature_names, [], [], [], [])
 
-reactor.connectTCP("localhost", 8000, RemoteExplainerFactory(data, model))
-reactor.run()
+explainer = CeleryExplainer("wachter")
+explainer.fit(model, data)
+cfs = explainer.explain(model, data[:5])
+
+print(f"Wachter generated counterfactuals: {cfs}")

@@ -1,4 +1,4 @@
-from explainers_lib import Ensemble, TorchModel, Pareto, IdealPoint, All,  SerializableDataset as Dataset
+from explainers_lib import Ensemble, TorchModel, Pareto, IdealPoint, All, Dataset
 from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
 from explainers_lib.explainers.remote import RemoteExplainerFactory
 from sklearn.datasets import load_iris

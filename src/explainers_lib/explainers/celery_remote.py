@@ -1,7 +1,6 @@
 from logging import warning
-from explainers_lib.datasets import SerializableDataset
-from explainers_lib.model import TorchModel, TFModel
-from explainers_lib.counterfactual import Counterfactual
+from explainers_lib.datasets import Dataset
+from explainers_lib.model import Model
 from celery import Celery
 
 # TODO: make this configurable
@@ -57,7 +56,7 @@ def create_celery_tasks(explainer, name):
         app.backend.client.set(f'explainer_model:{name}', serialized_model)
         app.backend.client.set(f'explainer_model_type:{name}', model_type)
 
-    @app.task(name=f'{name}.fit', ignore_result=True)
+    @app.task(name=f'{name}.fit')
     def fit(_, name=name):
         serialized_dataset = app.backend.client.get(f'explainer_data:{name}')
         serialized_model = app.backend.client.get(f'explainer_model:{name}')
@@ -66,13 +65,8 @@ def create_celery_tasks(explainer, name):
         if not serialized_dataset or not serialized_model:
             raise RuntimeError(f"celery_remote: fit: data or model not set for {name}")
 
-        data = SerializableDataset.deserialize(serialized_dataset)
-        if model_type == 'torch':
-            model = TorchModel.deserialize(serialized_model)
-        elif model_type == 'tf':
-            model = TFModel.deserialize(serialized_model)
-        else:
-            raise NotImplementedError("celery_remote: set_model: Unknown model type")
+        data = Dataset.deserialize(serialized_dataset)
+        model = Model.deserialize(serialized_model, model_type)
 
         explainer = explainer_state[name]['explainer']
         explainer.fit(model, data)
@@ -86,13 +80,8 @@ def create_celery_tasks(explainer, name):
         if not serialized_dataset or not serialized_model:
             raise RuntimeError(f"celery_remote: explain: data or model not set for {name}")
 
-        data = SerializableDataset.deserialize(serialized_dataset)
-        if model_type == 'torch':
-            model = TorchModel.deserialize(serialized_model)
-        elif model_type == 'tf':
-            model = TFModel.deserialize(serialized_model)
-        else:
-            raise NotImplementedError("celery_remote: set_model: Unknown model type")
+        data = Dataset.deserialize(serialized_dataset)
+        model = Model.deserialize(serialized_model, model_type)
 
         explainer = explainer_state[name]['explainer']
         counterfactuals = explainer.explain(model, data)
@@ -104,8 +93,6 @@ def create_celery_tasks(explainer, name):
             'instance': serialized_dataset,
             'counterfactuals': [counterfactual.serialize() for counterfactual in counterfactuals]
         }
-
-        print(f"[DEBUG] Result for {name}: {result}")
 
         return result
 

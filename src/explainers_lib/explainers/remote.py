@@ -3,7 +3,7 @@ from twisted.internet import reactor, protocol, threads
 from twisted.protocols.basic import LineReceiver
 import pickle
 
-from explainers_lib.datasets import SerializableDataset
+from explainers_lib.datasets import Dataset
 from explainers_lib.explainers import Explainer
 from explainers_lib.model import TorchModel
 
@@ -47,7 +47,7 @@ class RemoteExplainerWorkerProtocol(LineReceiver):
             remaining = self.buffer[self.expected_length:]
             
             if self.current_op == "DATA":
-                self.dataset = SerializableDataset.deserialize(payload)
+                self.dataset = Dataset.deserialize(payload)
                 print("Received dataset")
             elif self.current_op == "MODEL":
                 self.model = TorchModel.deserialize(payload) # TODO: introduce ModelFactory
@@ -99,7 +99,7 @@ class RemoteExplainerWorkerFactory(protocol.Factory):
         return RemoteExplainerWorkerProtocol(self.explainer)
 
 class RemoteExplainerProtocol(LineReceiver):
-    def __init__(self, dataset: SerializableDataset, model):
+    def __init__(self, dataset: Dataset, model):
         self.dataset = dataset
         self.model = model
         self.results = []
@@ -211,7 +211,7 @@ class RemoteExplainerProtocol(LineReceiver):
         self.transport.loseConnection()
 
 class RemoteExplainerFactory(protocol.ClientFactory):
-    def __init__(self, dataset: SerializableDataset, model):
+    def __init__(self, dataset: Dataset, model):
         self.dataset = dataset
         self.model = model
 

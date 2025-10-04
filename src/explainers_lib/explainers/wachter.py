@@ -155,7 +155,6 @@ class WachterExplainer(Explainer):
         self.source_df = None
 
     def fit(self, model: Model, data: Dataset) -> None:
-        # No fitting needed
         self.source_df = pd.DataFrame(data.data)
         self.source_df
 

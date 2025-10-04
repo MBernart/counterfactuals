@@ -3,6 +3,7 @@ import pandas as pd
 from .model import Model
 from .explainers import Explainer
 from .explainers.celery_remote import app, try_get_available_explainers
+from .explainers.celery_explainer import CeleryExplainer
 from .aggregators import Aggregator, All
 from .counterfactual import Counterfactual
 from .datasets import Dataset
@@ -59,21 +60,21 @@ class Ensemble:
 # TODO: merge CeleryEnsemble and Ensemble
 class CeleryEnsemble:
     def __init__(
-        self, model_data: bytes, explainers: list[str], aggregator: Aggregator = All()
+        self, model: Model, explainers: list[CeleryExplainer], aggregator: Aggregator = All()
     ):
         """Constructs an ensemble"""
 
-        self.model_data = model_data
+        self.model = model
         self.aggregator = aggregator
 
         available_explainers = try_get_available_explainers()
-        explainers_set = set(explainers)
+        explainers_set = set(explainer.explainer_name for explainer in explainers)
 
-        self.explainers = list(explainers_set.intersection(available_explainers))
+        self.explainers = list(filter(lambda explainer: explainer.explainer_name in available_explainers, explainers))
         missing_explainers = list(explainers_set - available_explainers)
 
         if len(self.explainers) == 0:
-            raise RuntimeError(f"CeleryEnsemble: Explainers not found: {explainers}")
+            raise RuntimeError(f"CeleryEnsemble: Explainers not found: {missing_explainers}")
         
         if len(missing_explainers) > 0:
             raise RuntimeWarning(f"CeleryEnsemble: Explainers not found: {missing_explainers}")
@@ -82,27 +83,8 @@ class CeleryEnsemble:
         """This method is used to train all explainers in the ensemble"""
 
         fit_chains = []
-        for explainer_name in self.explainers:
-
-            set_dataset_sig = app.signature(
-                f'{explainer_name}.set_dataset',
-                args=[data.serialize()],
-                queue=explainer_name
-            )
-
-            set_model_sig = app.signature(
-                f'{explainer_name}.set_model',
-                args=[self.model_data, 'torch'],
-                queue=explainer_name
-            )
-
-            fit_sig = app.signature(
-                f'{explainer_name}.fit',
-                queue=explainer_name
-            )
-
-            fit_chain = group([set_dataset_sig, set_model_sig]) | fit_sig
-            fit_chains.append(fit_chain)
+        for explainer in self.explainers:
+            fit_chains.append(explainer.fit_async(self.model, data))
 
         fit_chord = group(fit_chains) | app.signature('ensemble.collect_results')
         fit_chord.apply_async().get()
@@ -111,21 +93,8 @@ class CeleryEnsemble:
         """This method is used to generate counterfactuals"""
 
         explain_chains = []
-        for explainer_name in self.explainers:
-
-            set_dataset_sig = app.signature(
-                f'{explainer_name}.set_dataset',
-                args=[data.serialize()],
-                queue=explainer_name
-            )
-
-            explain_sig = app.signature(
-                f'{explainer_name}.explain',
-                queue=explainer_name
-            )
-
-            explain_chain = set_dataset_sig | explain_sig
-            explain_chains.append(explain_chain)
+        for explainer in self.explainers:
+            explain_chains.append(explainer.explain_async(self.model, data))
 
         explain_chord = group(explain_chains) | app.signature('ensemble.collect_results')
         results = explain_chord.apply_async().get()
