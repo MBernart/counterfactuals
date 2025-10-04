@@ -34,4 +34,4 @@ ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 
-CMD ["celery", "-A", "explainers.growing_spheres.main", "worker", "-l", "info", "-Q", "growing_spheres,celery"]
+CMD ["celery", "-A", "explainers.growing_spheres.main", "worker", "-l", "info", "-n", "growing_spheres_worker@%h", "-Q", "growing_spheres,celery"]
