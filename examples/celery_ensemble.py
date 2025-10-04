@@ -2,8 +2,8 @@
 # docker run -d -p 6379:6379 --name celery-redis redis
 
 # Then start the explainers (you need to have properly configured python venv)
-# celery -A explainers.wachter.main worker -l info -Q wachter,celery
-# celery -A explainers.growing_spheres.main worker -l info -Q growing_spheres,celery
+# celery -A explainers.wachter.main worker -l info -n wachter_worker@%h -Q wachter,celery
+# celery -A explainers.growing_spheres.main worker -l info -n growing_spheres_worker@%h -Q growing_spheres,celery
 
 # If you prefer to use Docker, you can run
 # docker build -t wachter-explainer -f explainers/wachter/Dockerfile .
