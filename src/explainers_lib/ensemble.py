@@ -59,7 +59,7 @@ class Ensemble:
 # TODO: merge CeleryEnsemble and Ensemble
 class CeleryEnsemble:
     def __init__(
-        self, model_data: bytes, explainers: list[str], aggregator: Aggregator = All
+        self, model_data: bytes, explainers: list[str], aggregator: Aggregator = All()
     ):
         """Constructs an ensemble"""
 
