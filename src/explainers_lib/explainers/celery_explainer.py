@@ -67,3 +67,11 @@ class CeleryExplainer(Explainer):
         )
 
         return group([set_dataset_sig, set_model_sig]) | explain_sig
+
+class WachterExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("wachter")
+
+class GrowingSpheresExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("growing_spheres")

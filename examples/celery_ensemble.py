@@ -17,13 +17,18 @@
 
 from explainers_lib.datasets import Dataset
 from explainers_lib.ensemble import Ensemble
-from explainers_lib.explainers.celery_explainer import CeleryExplainer
 from explainers_lib.model import TorchModel
 from sklearn.datasets import load_iris
 import pandas as pd
 from sklearn.calibration import LabelEncoder
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import train_test_split
+
+# You can run the explainers locally or via celery
+from explainers_lib.explainers.celery_explainer import WachterExplainer
+# from explainers_lib.explainers.wachter import WachterExplainer
+from explainers_lib.explainers.celery_explainer import GrowingSpheresExplainer
+# from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
 
 # Dataset preparation
 iris = load_iris()
@@ -54,7 +59,7 @@ with open("temp_model.pt", "rb") as f:
 model = TorchModel.deserialize(model_data)
 
 # Ensemble
-ensemble = Ensemble(model, [CeleryExplainer("wachter"), CeleryExplainer("growing_spheres")])
+ensemble = Ensemble(model, [WachterExplainer(), GrowingSpheresExplainer()])
 print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
 
 ensemble.fit(data)
