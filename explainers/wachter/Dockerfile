@@ -34,4 +34,4 @@ ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 
-CMD ["celery", "-A", "common.celery_app", "worker", "-l", "info", "-Q", "wachter,celery"]
+CMD ["celery", "-A", "explainers.wachter.main", "worker", "-l", "info", "-Q", "wachter,celery"]
