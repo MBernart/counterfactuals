@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod  # proposed by gpt
 from typing import Callable, TypeAlias
+from .utils.scores import get_scores
+from .model import Model
+from .datasets import Dataset
 from .counterfactual import Counterfactual
 from .utils.pareto import get_pareto_optimal_mask, get_ideal_point
 
@@ -24,7 +27,39 @@ class AggregatorBase(ABC):
 class Pareto(AggregatorBase):
     """Computes the Pareto front from counterfactuals"""
 
-    def __call__(self, cfs: pd.DataFrame, scores: pd.DataFrame):
+    def __init__(self, k_neigh_feasibility = 3, k_neigh_discriminative = 9):
+        self.k_neigh_feasibility = k_neigh_feasibility
+        self.k_neigh_discriminative = k_neigh_discriminative
+
+    def fit(self, model: Model, data: Dataset) -> None:
+        self.model = model
+        self.data = data
+
+    def __call__(self, cfs: list[Counterfactual]) -> list[Counterfactual]:
+        all_counterfactuals = pd.DataFrame(columns=self.data.features + ['target'])
+        for cf in cfs:
+            cf_data_2d = cf.data.reshape(1, -1)
+            cf_target_2d = np.array([cf.target_class]).reshape(1, 1)
+            combined_row = np.hstack((cf_data_2d, cf_target_2d))
+            # TODO: currently this code breaks here, not sure how to fix
+            cfs_pd = pd.DataFrame(data=combined_row, columns=self.data.features + ['target'])
+            all_counterfactuals = pd.concat([all_counterfactuals, cfs_pd], ignore_index=True)
+
+        train_preds = self.model.predict(self.data)
+
+        scores = get_scores(
+            cfs=cfs.drop(columns=['target']).to_numpy().astype('<U11'),
+            cf_predicted_classes=cfs['target'].to_numpy(),
+            training_data=self.data.data,
+            training_data_predicted_classes=train_preds,
+            x = self.query_instance.data,
+            continous_indices=self.data.continuous_features_ids,
+            categorical_indices=self.data.categorical_features_ids,
+            k_neighbors_feasib=self.k_neigh_feasibility, 
+            k_neighbors_discriminative=self.k_neigh_discriminative
+            ).reset_index(drop=True)
+
+        # Example: return all Pareto-efficient counterfactuals
         x_metric = 'Proximity'
         y_metric = 'K_Feasibility(3)'
         z_metric = 'DiscriminativePower(9)'
