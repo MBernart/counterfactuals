@@ -2,7 +2,7 @@ from celery import group
 import pandas as pd
 from .model import Model
 from .explainers import Explainer
-from .explainers.celery_remote import app
+from .explainers.celery_remote import app, try_get_available_explainers
 from .aggregators import Aggregator, All
 from .counterfactual import Counterfactual
 from .datasets import Dataset
@@ -66,10 +66,11 @@ class CeleryEnsemble:
         self.model_data = model_data
         self.aggregator = aggregator
 
-        available_explainers = app.send_task('ensemble.get_explainers').get()
-        # TODO: Need to check that selected explainers are actually available (ex. ping)
-        self.explainers = list(filter(lambda explainer: explainer in available_explainers, explainers))
-        missing_explainers = list(filter(lambda explainer: explainer not in available_explainers, explainers))
+        available_explainers = try_get_available_explainers()
+        explainers_set = set(explainers)
+
+        self.explainers = list(explainers_set.intersection(available_explainers))
+        missing_explainers = list(explainers_set - available_explainers)
 
         if len(self.explainers) == 0:
             raise RuntimeError(f"CeleryEnsemble: Explainers not found: {explainers}")
