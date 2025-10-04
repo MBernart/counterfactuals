@@ -1,7 +1,9 @@
+from celery import group
 import pandas as pd
 from .model import Model
 from .explainers import Explainer
-from .aggregators import Aggregator
+from .explainers.celery_remote import app
+from .aggregators import Aggregator, All
 from .counterfactual import Counterfactual
 from .datasets import Dataset
 from .utils.scores import get_scores
@@ -53,3 +55,80 @@ class Ensemble:
         filtered_counterfactuals = self.aggregator(all_counterfactuals, scores)
         print(filtered_counterfactuals)
         return filtered_counterfactuals
+
+# TODO: merge CeleryEnsemble and Ensemble
+class CeleryEnsemble:
+    def __init__(
+        self, model_data: bytes, explainers: list[str], aggregator: Aggregator = All
+    ):
+        """Constructs an ensemble"""
+
+        self.model_data = model_data
+        self.aggregator = aggregator
+
+        available_explainers = app.send_task('ensemble.get_explainers').get()
+        # TODO: Need to check that selected explainers are actually available (ex. ping)
+        self.explainers = list(filter(lambda explainer: explainer in available_explainers, explainers))
+        missing_explainers = list(filter(lambda explainer: explainer not in available_explainers, explainers))
+
+        if len(self.explainers) == 0:
+            raise RuntimeError(f"CeleryEnsemble: Explainers not found: {explainers}")
+        
+        if len(missing_explainers) > 0:
+            raise RuntimeWarning(f"CeleryEnsemble: Explainers not found: {missing_explainers}")
+
+    def fit(self, data: Dataset) -> None:
+        """This method is used to train all explainers in the ensemble"""
+
+        fit_chains = []
+        for explainer_name in self.explainers:
+
+            set_dataset_sig = app.signature(
+                f'{explainer_name}.set_dataset',
+                args=[data.serialize()],
+                queue=explainer_name
+            )
+
+            set_model_sig = app.signature(
+                f'{explainer_name}.set_model',
+                args=[self.model_data, 'torch'],
+                queue=explainer_name
+            )
+
+            fit_sig = app.signature(
+                f'{explainer_name}.fit',
+                queue=explainer_name
+            )
+
+            fit_chain = group([set_dataset_sig, set_model_sig]) | fit_sig
+            fit_chains.append(fit_chain)
+
+        fit_chord = group(fit_chains) | app.signature('ensemble.collect_results')
+        fit_chord.apply_async().get()
+
+    def explain(self, data: Dataset) -> list[Counterfactual]:
+        """This method is used to generate counterfactuals"""
+
+        explain_chains = []
+        for explainer_name in self.explainers:
+
+            set_dataset_sig = app.signature(
+                f'{explainer_name}.set_dataset',
+                args=[data.serialize()],
+                queue=explainer_name
+            )
+
+            explain_sig = app.signature(
+                f'{explainer_name}.explain',
+                queue=explainer_name
+            )
+
+            explain_chain = set_dataset_sig | explain_sig
+            explain_chains.append(explain_chain)
+
+        explain_chord = group(explain_chains) | app.signature('ensemble.collect_results')
+        results = explain_chord.apply_async().get()
+
+        counterfactuals = [Counterfactual.deserialize(counterfactual) for result in results for counterfactual in result['counterfactuals']]
+
+        return self.aggregator(counterfactuals)
