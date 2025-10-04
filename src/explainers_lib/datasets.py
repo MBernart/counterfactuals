@@ -78,8 +78,6 @@ class Dataset:
             self.allowable_ranges,
         )
 
-
-class SerializableDataset(Dataset):
     def serialize(self) -> bytes:
         return pickle.dumps(
             {
@@ -96,7 +94,7 @@ class SerializableDataset(Dataset):
     @staticmethod
     def deserialize(data: bytes) -> Self:
         obj = pickle.loads(data)
-        return SerializableDataset(
+        return Dataset(
             obj["data"],
             obj["target"],
             obj["features"],

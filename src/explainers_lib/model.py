@@ -30,20 +30,19 @@ class Model:
         pass
         # raise NotImplementedError
 
-
-class SerializableModel(Model):
-    def serialize(self) -> bytes:
+    def serialize(self) -> tuple[bytes, str]:
         pass
         # raise NotImplementedError
 
     @staticmethod
-    def deserialize(self) -> Model:
-        pass
-        # raise NotImplementedError
-    
+    def deserialize(data: bytes, type: str) -> "Model":
+        if type == "tensorflow":
+            return TFModel.deserialize(data)
+        elif type == "torch":
+            return TorchModel.deserialize(data)
+        raise RuntimeError(f"Unknown model type: {type}")
 
-
-class TFModel(SerializableModel):
+class TFModel(Model):
     def __init__(self, model: 'tf.keras.Model', data: pd.DataFrame, columns_ohe_order: List[str]) -> None:
         import tensorflow as tf
         self._tf = tf
@@ -96,7 +95,7 @@ class TFModel(SerializableModel):
         x = self._prepare_input(x)
         return self._mymodel.predict(x)
     
-    def serialize(self) -> bytes:
+    def serialize(self) -> tuple[bytes, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, 'model.h5')
             self._mymodel.save(path)
@@ -104,10 +103,13 @@ class TFModel(SerializableModel):
             with open(path, 'rb') as f:
                 model_bytes = f.read()
 
-        return pickle.dumps({
-            'model_bytes': model_bytes,
-            'columns_order': self.columns_order
-        })
+        return (
+            pickle.dumps({
+                'model_bytes': model_bytes,
+                'columns_order': self.columns_order
+            }), 
+            "tensorflow"
+        )
 
     @staticmethod
     def deserialize(data: bytes) -> 'TFModel':
@@ -126,7 +128,7 @@ class TFModel(SerializableModel):
         return TFModel(model=model, data=None, columns_ohe_order=columns_order)
 
 
-class TorchModel(SerializableModel):
+class TorchModel(Model):
     def __init__(self, model):
         self._model = model
         import torch
@@ -162,7 +164,7 @@ class TorchModel(SerializableModel):
 
         return probabilities.cpu().numpy()
 
-    def serialize(self) -> bytes:
+    def serialize(self) -> tuple[bytes, str]:
         import io
 
         buffer = io.BytesIO()
@@ -170,7 +172,7 @@ class TorchModel(SerializableModel):
         self._torch.jit.save(self._model, buffer)
 
         buffer.seek(0)
-        return buffer.read()
+        return (buffer.read(), "torch")
 
     @staticmethod
     def deserialize(data: bytes) -> Model:

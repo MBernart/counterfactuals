@@ -16,7 +16,9 @@
 # docker pull cfe.cs.put.poznan.pl/counterfactuals-growing-spheres
 
 from explainers_lib.ensemble import CeleryEnsemble
-from explainers_lib.datasets import SerializableDataset
+from explainers_lib.datasets import Dataset
+from explainers_lib.explainers.celery_explainer import CeleryExplainer
+from explainers_lib.model import TorchModel
 from sklearn.datasets import load_iris
 import pandas as pd
 from sklearn.calibration import LabelEncoder
@@ -43,15 +45,17 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-data = SerializableDataset(X_test, y_test, iris.feature_names, [], [], [], [])
+data = Dataset(X_test, y_test, iris.feature_names, [], [], [], [])
 
 # Loading the pretrained model
 with open("temp_model.pt", "rb") as f:
     model_data = f.read()
 
+model = TorchModel.deserialize(model_data)
+
 # Ensemble
-ensemble = CeleryEnsemble(model_data, ["wachter", "growing_spheres"])
-print(f"Used explainers: {ensemble.explainers}")
+ensemble = CeleryEnsemble(model, [CeleryExplainer("wachter"), CeleryExplainer("growing_spheres")])
+print(f"Used explainers: {[explainer.explainer_name for explainer in ensemble.explainers]}")
 
 ensemble.fit(data)
 print(f"Ensemble fitting complete")
