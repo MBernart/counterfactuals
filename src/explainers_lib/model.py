@@ -20,7 +20,7 @@ class Model:
         pass
         # raise NotImplementedError
 
-    def predict(self) -> list[ClassLabel]:
+    def predict(self, data: Dataset) -> list[ClassLabel]:
         """This method is used predict the class of instances"""
         pass
         # raise NotImplementedError
