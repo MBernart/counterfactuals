@@ -64,7 +64,7 @@ def create_celery_tasks(explainer, name):
         explainer.fit(model, data)
 
     @app.task(name=f'{name}.explain')
-    def explain(name=name):
+    def explain(_, name=name):
         serialized_dataset = app.backend.client.get(f'explainer_data:{name}')
         serialized_model = app.backend.client.get(f'explainer_model:{name}')
         model_type = app.backend.client.get(f'explainer_model_type:{name}').decode('utf-8')
