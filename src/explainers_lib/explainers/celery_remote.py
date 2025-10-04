@@ -1,3 +1,4 @@
+from logging import warning
 from explainers_lib.datasets import SerializableDataset
 from explainers_lib.model import TorchModel, TFModel
 from explainers_lib.counterfactual import Counterfactual
@@ -19,9 +20,22 @@ app.conf.update(
     result_serializer='json',
 )
 
-@app.task(name='ensemble.get_explainers')
-def get_explainers():
-    return ['wachter', 'growing_spheres']
+def try_get_available_explainers() -> set[str]:
+    i = app.control.inspect()
+    try:
+        active_queues_by_worker = i.active_queues()
+        if active_queues_by_worker:
+            all_queues = {
+                queue['name']
+                for queues in active_queues_by_worker.values()
+                for queue in queues
+            }
+            return all_queues - {'celery'}
+        else:
+            return set()
+    except (TimeoutError, Exception) as e:
+        warning(f"Redis might be unreachable. Make sure to run:\ndocker run -d -p 6379:6379 --name celery-redis redis\n")
+        return set()
 
 @app.task(name='ensemble.collect_results')
 def collect_results(results):
