@@ -1,7 +1,31 @@
 from explainers_lib.datasets import SerializableDataset
-from common.celery_app import app
 from explainers_lib.model import TorchModel, TFModel
 from explainers_lib.counterfactual import Counterfactual
+from celery import Celery
+
+# TODO: make this configurable
+BROKER_URL = 'redis://localhost:6379/0'
+BACKEND_URL = 'redis://localhost:6379/0'
+
+app = Celery(
+    'cf_ensemble',
+    broker=BROKER_URL,
+    backend=BACKEND_URL
+)
+
+app.conf.update(
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+)
+
+@app.task(name='ensemble.get_explainers')
+def get_explainers():
+    return ['wachter', 'growing_spheres']
+
+@app.task(name='ensemble.collect_results')
+def collect_results(results):
+    return results
 
 explainer_state = {}
 

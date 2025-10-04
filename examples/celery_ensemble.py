@@ -2,7 +2,8 @@
 # docker run -d -p 6379:6379 --name celery-redis redis
 
 # Then start the explainers (you need to have properly configured python venv)
-# celery -A common.celery_app worker -l info -Q wachter,growing_spheres,celery
+# celery -A explainers.wachter.main worker -l info -Q wachter,celery
+# celery -A explainers.growing_spheres.main worker -l info -Q growing_spheres,celery
 
 # If you prefer to use Docker, you can run
 # docker build -t wachter-explainer -f explainers/wachter/Dockerfile .
@@ -14,10 +15,7 @@
 # docker pull cfe.cs.put.poznan.pl/counterfactuals-wachter
 # docker pull cfe.cs.put.poznan.pl/counterfactuals-growing-spheres
 
-import sys
-sys.path.append("..") # TODO: this is a hack
-
-from common.celery_app import app
+from explainers_lib.explainers.celery_remote import app
 from explainers_lib.datasets import SerializableDataset
 from sklearn.datasets import load_iris
 from celery import group
