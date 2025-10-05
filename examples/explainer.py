@@ -24,16 +24,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
 
+# Dataset preparation
 iris = load_iris()
 
-with open("temp_model.pt", "rb") as f:
-    model_data = f.read()
-
-model = TorchModel.deserialize(model_data)
-
-# Load the Iris dataset and create identical SS as the model was trained on
-# literally copy-pasted from training script
-iris = load_iris()
 data = pd.DataFrame(data=iris.data, columns=iris.feature_names)
 data["species"] = iris.target
 
@@ -51,8 +44,15 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-data = Dataset(X_test, y_test, iris.feature_names, [], [], [], [])
+data = Dataset(X_test, y_test, iris.feature_names, [], iris.feature_names, [], [])
 
+# Loading the pretrained model
+with open("temp_model.pt", "rb") as f:
+    model_data = f.read()
+
+model = TorchModel.deserialize(model_data)
+
+# Running the explainer
 explainer = WachterExplainer()
 explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
