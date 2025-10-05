@@ -50,10 +50,24 @@ class Ensemble:
             cfs = [Counterfactual.deserialize(counterfactual) for result in results for counterfactual in result['counterfactuals']]
             all_counterfactuals.extend(cfs)
 
-        if isinstance(self.aggregator, Pareto):
-            self.aggregator.query_instance = data # TODO: this is a hack
+        all_filtered_counterfactuals = list()
+        for cfs in cfs_group_by_original_data(all_counterfactuals):
+            filtered_counterfactuals = self.aggregator(cfs)
+            all_filtered_counterfactuals.extend(filtered_counterfactuals)
         
-        return self.aggregator(all_counterfactuals)
+        return all_filtered_counterfactuals
+
+def cfs_group_by_original_data(cfs: list[Counterfactual]) -> list[list[Counterfactual]]:
+    table: dict[bytes, list[Counterfactual]] = dict()
+
+    for cf in cfs:
+        key = cf.original_data.tobytes()
+        if key in table:
+            table[key].append(cf)
+        else:
+            table[key] = [cf]
+
+    return table.values()
 
 def ensure_celery_explainers(requested_explainers: list[CeleryExplainer]) -> list[CeleryExplainer]:
     if len(requested_explainers) == 0:

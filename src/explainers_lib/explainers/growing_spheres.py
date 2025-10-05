@@ -34,7 +34,7 @@ class GrowingSpheresExplainer(Explainer):
 
                 try:
                     cf = self._generate_counterfactual(instance, model, target_class, original_class)
-                    counterfactuals.append(Counterfactual(cf.to_numpy(), original_class, target_class))
+                    counterfactuals.append(cf)
                     break  # Stop after finding the first valid CF
                 except ValueError:
                     continue  # Try next target class
@@ -47,7 +47,7 @@ class GrowingSpheresExplainer(Explainer):
         model: Model,
         target_class: int,
         original_class: int,
-    ) -> pd.DataFrame:
+    ) -> Counterfactual:
         radius = self.step_size
         instance = instance_ds.data[0]
         dim = instance.shape[0]
@@ -64,11 +64,7 @@ class GrowingSpheresExplainer(Explainer):
 
             for i, pred_class in enumerate(pred_classes):
                 if pred_class == target_class:
-                    feature_names = instance_ds.features.copy()
-                    feature_names.append("target")
-
-                    row = list(candidates[i]) + [target_class]
-                    return pd.DataFrame([row], columns=feature_names)
+                    return Counterfactual(instance, candidates[i], original_class, pred_class)
 
             radius += self.step_size
 
