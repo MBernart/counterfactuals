@@ -68,8 +68,6 @@ class ScoreCalculator:
 
         self.fit_done = True
 
-        print('Fit completed')
-
 
 
     def get_ranges(self) -> npt.NDArray[Any]:

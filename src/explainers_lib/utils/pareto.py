@@ -14,7 +14,7 @@ def get_pareto_optimal_mask(data: npt.NDArray[Any], optimization_direction: List
     data_dic = {i: list(row) for i, row in enumerate(data)}
 
     solver = Pareto(data_dic, verbose=False)
-    result = solver.solve(indexes=[i for i in range(data.shape[0])], prefs=optimization_direction)
+    result = solver.solve(indexes=[i for i in range(data.shape[-1])], prefs=optimization_direction)
 
     mask = np.zeros(data.shape[0], dtype=bool)
     for k, v in result.items():

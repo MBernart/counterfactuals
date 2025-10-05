@@ -215,6 +215,7 @@ class WachterExplainer(Explainer):
                 )
 
             return Counterfactual(
+                original_data=instance,
                 data=counterfactual_data,
                 original_class=original_class,
                 target_class=predicted_class,

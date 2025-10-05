@@ -34,30 +34,27 @@ class Pareto(AggregatorBase):
     def fit(self, model: Model, data: Dataset) -> None:
         self.model = model
         self.data = data
+        self.train_preds = self.model.predict(self.data)
 
-    def __call__(self, cfs: list[Counterfactual]) -> list[Counterfactual]:
-        all_counterfactuals = pd.DataFrame(columns=self.data.features + ['target'])
-        for cf in cfs:
-            cf_data_2d = cf.data.reshape(1, -1)
-            cf_target_2d = np.array([cf.target_class]).reshape(1, 1)
-            combined_row = np.hstack((cf_data_2d, cf_target_2d))
-            # TODO: currently this code breaks here, not sure how to fix
-            cfs_pd = pd.DataFrame(data=combined_row, columns=self.data.features + ['target'])
-            all_counterfactuals = pd.concat([all_counterfactuals, cfs_pd], ignore_index=True)
+    def calculate_scores(self, cfs: list[Counterfactual]) -> pd.DataFrame:
+        original_data = cfs[0].original_data.reshape(1, -1)
+        cfs_data = np.array([cf.data for cf in cfs])
+        cfs_target = np.array([cf.target_class for cf in cfs])
 
-        train_preds = self.model.predict(self.data)
-
-        scores = get_scores(
-            cfs=cfs.drop(columns=['target']).to_numpy().astype('<U11'),
-            cf_predicted_classes=cfs['target'].to_numpy(),
+        return get_scores(
+            cfs=cfs_data,
+            cf_predicted_classes=cfs_target,
             training_data=self.data.data,
-            training_data_predicted_classes=train_preds,
-            x = self.query_instance.data,
+            training_data_predicted_classes=self.train_preds,
+            x = original_data,
             continous_indices=self.data.continuous_features_ids,
             categorical_indices=self.data.categorical_features_ids,
             k_neighbors_feasib=self.k_neigh_feasibility, 
             k_neighbors_discriminative=self.k_neigh_discriminative
             ).reset_index(drop=True)
+
+    def __call__(self, cfs: list[Counterfactual]) -> list[Counterfactual]:
+        scores = self.calculate_scores(cfs)
 
         # Example: return all Pareto-efficient counterfactuals
         x_metric = 'Proximity'
@@ -75,56 +72,61 @@ class Pareto(AggregatorBase):
             optimization_direction=optimization_direction
         ).astype(bool)
 
-        pareto_cfs = cfs[pareto_mask]
+        pareto_indices = np.where(pareto_mask)[0]
+        pareto_cfs = [cfs[i] for i in pareto_indices]
         return pareto_cfs
 
 
-class IdealPoint(AggregatorBase):
+class IdealPoint(Pareto):
     """Computes the ideal point from counterfactuals"""
-    def __init__(self, weights: list[float] = None):
+    def __init__(self, weights: list[float] = None, k_neigh_feasibility = 3, k_neigh_discriminative = 9):
         """
         weights: optional list of 3 weights for x, y, z metrics
         (will be normalized to sum = 1). If None, equal weights are used.
         """
+        super().__init__(k_neigh_feasibility=k_neigh_feasibility, k_neigh_discriminative=k_neigh_discriminative)
         self.weights = weights
 
-    def __call__(self, cfs: pd.DataFrame, scores: pd.DataFrame):
-            x_metric = 'Proximity'
-            y_metric = 'K_Feasibility(3)'
-            z_metric = 'DiscriminativePower(9)'
-            optimization_direction = ['min', 'min', 'max']
+    def __call__(self, cfs: list[Counterfactual]) -> list[Counterfactual]:
+        scores = self.calculate_scores(cfs)
 
-            all_x = scores[x_metric].to_numpy()
-            all_y = scores[y_metric].to_numpy()
-            all_z = scores[z_metric].to_numpy()
-            to_check = np.array([all_x, all_y, all_z], dtype=np.float64).T
+        x_metric = 'Proximity'
+        y_metric = 'K_Feasibility(3)'
+        z_metric = 'DiscriminativePower(9)'
+        optimization_direction = ['min', 'min', 'max']
 
-            pareto_mask = get_pareto_optimal_mask(
-                data=to_check,
-                optimization_direction=optimization_direction
-            ).astype(bool)
-            pareto_cfs = cfs[pareto_mask]
-            pareto_data = to_check[pareto_mask]
+        all_x = scores[x_metric].to_numpy()
+        all_y = scores[y_metric].to_numpy()
+        all_z = scores[z_metric].to_numpy()
+        to_check = np.array([all_x, all_y, all_z], dtype=np.float64).T
 
-            ideal_point = get_ideal_point(to_check, optimization_direction, pareto_mask)
+        pareto_mask = get_pareto_optimal_mask(
+            data=to_check,
+            optimization_direction=optimization_direction
+        ).astype(bool)
+        
+        pareto_indices = np.where(pareto_mask)[0]
+        pareto_cfs = [cfs[i] for i in pareto_indices]
+        pareto_data = to_check[pareto_mask]
 
-            if self.weights is None:
-                weights = np.ones(to_check.shape[1]) / to_check.shape[1]
-            else:
-                weights = np.array(self.weights, dtype=float)
-                weights = weights / weights.sum()  # normalize
+        ideal_point = get_ideal_point(to_check, optimization_direction, pareto_mask)
 
-            # weighted distances
-            diffs = pareto_data - ideal_point
-            dists = np.sqrt(np.sum(weights * diffs**2, axis=1))
-            # pick closest
-            best_idx = np.argmin(dists)
-            return pareto_cfs.iloc[[best_idx]]
+        if self.weights is None:
+            weights = np.ones(to_check.shape[1]) / to_check.shape[1]
+        else:
+            weights = np.array(self.weights, dtype=float)
+            weights = weights / weights.sum()  # normalize
 
+        # weighted distances
+        diffs = pareto_data - ideal_point
+        dists = np.sqrt(np.sum(weights * diffs**2, axis=1))
+        # pick closest
+        best_idx = np.argmin(dists)
+        return [pareto_cfs[best_idx]]
 
 
 class All(AggregatorBase):
     """Return all (valid) counterfactuals found by explainer"""
 
-    def __call__(self, cfs: pd.DataFrame, scores: pd.DataFrame):
+    def __call__(self, cfs: list[Counterfactual]) -> list[Counterfactual]:
         return cfs
