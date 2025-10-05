@@ -1,19 +1,27 @@
-# First start the redis message broker
+# You can run the explainers locally
+from explainers_lib.explainers.wachter import WachterExplainer
+from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
+
+# Or you can run it via celery, or even run some locally and some via celery
+# from explainers_lib.explainers.celery_explainer import WachterExplainer
+# from explainers_lib.explainers.celery_explainer import GrowingSpheresExplainer
+
+# To do this, start the redis message broker
 # docker run -d -p 6379:6379 --name celery-redis redis
 
 # Then start the explainers (you need to have properly configured python venv)
 # celery -A explainers.wachter.main worker -l info -n wachter_worker@%h -Q wachter,celery
 # celery -A explainers.growing_spheres.main worker -l info -n growing_spheres_worker@%h -Q growing_spheres,celery
 
-# If you prefer to use Docker, you can run
+# If you prefer to use Docker, you can pull the images from our repository
+# docker pull cfe.cs.put.poznan.pl/counterfactuals-wachter
+# docker pull cfe.cs.put.poznan.pl/counterfactuals-growing-spheres
+
+# Alternatively you can build and run the images
 # docker build -t wachter-explainer -f explainers/wachter/Dockerfile .
 # docker build -t growing-spheres-explainer -f explainers/growing_spheres/Dockerfile .
 # docker run --rm -it --network host wachter-explainer
 # docker run --rm -it --network host growing-spheres-explainer
-
-# Alternatively you can pull the Docker images from our repository
-# docker pull cfe.cs.put.poznan.pl/counterfactuals-wachter
-# docker pull cfe.cs.put.poznan.pl/counterfactuals-growing-spheres
 
 from explainers_lib.aggregators import IdealPoint
 from explainers_lib.datasets import Dataset
@@ -24,12 +32,6 @@ import pandas as pd
 from sklearn.calibration import LabelEncoder
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import train_test_split
-
-# You can run the explainers locally or via celery
-from explainers_lib.explainers.celery_explainer import WachterExplainer
-# from explainers_lib.explainers.wachter import WachterExplainer
-from explainers_lib.explainers.celery_explainer import GrowingSpheresExplainer
-# from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
 
 # Dataset preparation
 iris = load_iris()

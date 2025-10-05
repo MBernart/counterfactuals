@@ -1,5 +1,23 @@
+# You can run the explainer locally
+from explainers_lib.explainers.wachter import WachterExplainer
+
+# Or you can run it via celery
+# from explainers_lib.explainers.celery_explainer import WachterExplainer
+
+# To do this, start the redis message broker
+# docker run -d -p 6379:6379 --name celery-redis redis
+
+# Then start the explainer (you need to have properly configured python venv)
+# celery -A explainers.wachter.main worker -l info -n wachter_worker@%h -Q wachter,celery
+
+# If you prefer to use Docker, you can pull the image from our repository
+# docker pull cfe.cs.put.poznan.pl/counterfactuals-wachter
+
+# Alternatively you can build and run the image
+# docker build -t wachter-explainer -f explainers/wachter/Dockerfile .
+# docker run --rm -it --network host wachter-explainer
+
 from explainers_lib import TorchModel, Dataset
-from explainers_lib.explainers.celery_explainer import CeleryExplainer
 import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
@@ -35,7 +53,7 @@ X_test = scaler.transform(X_test)
 
 data = Dataset(X_test, y_test, iris.feature_names, [], [], [], [])
 
-explainer = CeleryExplainer("wachter")
+explainer = WachterExplainer()
 explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
 
