@@ -15,6 +15,9 @@ class GrowingSpheresExplainer(Explainer):
         self.max_radius = max_radius
         self.num_samples = num_samples
 
+    def __repr__(self) -> str:
+        return f"growing_spheres(step_size={repr(self.step_size)}, max_radius={repr(self.max_radius)}, num_samples={repr(self.num_samples)})"
+
     def fit(self, model: Model, data: Dataset) -> None:
         # No fitting needed for Growing Spheres
         pass
@@ -64,7 +67,7 @@ class GrowingSpheresExplainer(Explainer):
 
             for i, pred_class in enumerate(pred_classes):
                 if pred_class == target_class:
-                    return Counterfactual(instance, candidates[i], original_class, pred_class)
+                    return Counterfactual(instance, candidates[i], original_class, pred_class, repr(self))
 
             radius += self.step_size
 

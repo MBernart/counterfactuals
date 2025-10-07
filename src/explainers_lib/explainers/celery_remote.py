@@ -47,6 +47,10 @@ def create_celery_tasks(explainer, name):
         'explainer': explainer
     }
 
+    @app.task(name=f'{name}.repr')
+    def get_repr(name=name):
+        return repr(explainer_state[name]['explainer'])
+
     @app.task(name=f'{name}.set_dataset', ignore_result=True)
     def set_dataset(serialized_dataset: bytes, name=name):
         app.backend.client.set(f'explainer_data:{name}', serialized_dataset)
@@ -96,4 +100,4 @@ def create_celery_tasks(explainer, name):
 
         return result
 
-    return set_dataset, set_model, fit, explain
+    return get_repr, set_dataset, set_model, fit, explain

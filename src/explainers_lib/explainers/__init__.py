@@ -12,3 +12,7 @@ class Explainer:
     def explain(self, model: Model, data: Dataset) -> list[Counterfactual]:
         """This method is used generate the counterfactuals"""
         pass
+
+    def __repr__(self) -> str:
+        """This method is used to represent the explainer"""
+        pass

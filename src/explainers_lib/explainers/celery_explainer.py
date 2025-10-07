@@ -1,4 +1,4 @@
-from celery import chain, group
+from celery import chain, group, signature
 from ..counterfactual import Counterfactual
 from ..datasets import Dataset, Dataset
 from ..model import Model
@@ -10,6 +10,15 @@ class CeleryExplainer(Explainer):
 
     def __init__(self, name: str):
         self.explainer_name = name
+
+    def __repr__(self) -> str:
+        return self.repr_async().apply_async().get()
+
+    def repr_async(self) -> signature:
+        return app.signature(
+            f'{self.explainer_name}.repr',
+            queue=self.explainer_name
+        )
 
     def fit(self, model: Model, data: Dataset) -> None:
         """This method is used to fit the explainer"""
