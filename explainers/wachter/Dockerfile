@@ -25,7 +25,7 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./explainers ./explainers
+COPY ./explainers/wachter/main.py ./explainers/wachter/main.py
 
 USER app
 
