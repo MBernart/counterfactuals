@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 from celery import group
 from .model import Model
 from .explainers import Explainer
@@ -10,6 +10,8 @@ from .datasets import Dataset
 import numpy as np
 from rich.console import Console
 from rich.table import Table
+
+Postprocessor = Callable[[np.ndarray], np.ndarray]
 
 class Ensemble:
     def __init__(
@@ -47,7 +49,11 @@ class Ensemble:
         if task:
             task.get()
 
-    def explain(self, data: Dataset, pretty_print: bool = False) -> list[Counterfactual]:
+    def explain(self,
+                data: Dataset,
+                pretty_print: bool = False,
+                pretty_print_postprocess: Optional[Postprocessor] = None,
+                pretty_print_postprocess_target: Optional[Postprocessor] = None) -> list[Counterfactual]:
         """This method is used to generate counterfactuals"""
 
         task = explain_celery_explainers(self.celery_explainers, self.model, data)
@@ -68,7 +74,7 @@ class Ensemble:
             all_filtered_counterfactuals.extend(filtered_counterfactuals)
         
         if pretty_print:
-            print_cfs(all_filtered_counterfactuals, data=data, model=self.model, explainers=self.get_explainers_repr())
+            print_cfs(all_filtered_counterfactuals, data=data, model=self.model, explainers=self.get_explainers_repr(), postprocess=pretty_print_postprocess, postprocess_target=pretty_print_postprocess_target)
 
         return all_filtered_counterfactuals
 
@@ -96,12 +102,27 @@ def cfs_group_by_explainer(cfs: list[Counterfactual]) -> dict[str, list[Counterf
     
     return table
 
+def postprocess_cfs(cfs: list[Counterfactual],
+                    postprocess: Postprocessor = lambda x: x,
+                    postprocess_target: Postprocessor = lambda x: x) -> list[Counterfactual]:
+    postprocessed_cfs = list()
+
+    for cf in cfs:
+        data = postprocess([cf.original_data, cf.data])
+        targets = postprocess_target([cf.original_class, cf.target_class])
+
+        postprocessed_cfs.append(Counterfactual(*data, *targets, cf.explainer))
+
+    return postprocessed_cfs
+
 def print_cfs(
         cfs: list[Counterfactual],
         feature_names: Optional[list[str]] = None,
         data: Optional[Dataset] = None,
         explainers: Optional[list[str]] = None,
         model: Optional[Model] = None,
+        postprocess: Optional[Postprocessor] = None,
+        postprocess_target: Optional[Postprocessor] = None,
         printer: Any = Console()) -> None:
     if len(cfs) == 0 and data is None:
         return
@@ -131,7 +152,10 @@ def print_cfs(
             first_section = False
 
         original_data = cfs[0].original_data if len(cfs) > 0 else np.frombuffer(bytes)
-        original_class = repr(int(cfs[0].original_class)) if len(cfs) > 0 else repr(int(model.predict(data.like(np.array([original_data])))[0])) if model else "N/A"
+        original_class = cfs[0].original_class if len(cfs) > 0 else model.predict(data.like(np.array([original_data])))[0] if model else None
+        original_class = postprocess_target([original_class])[0] if postprocess_target else original_class
+        original_class = repr(int(original_class)) if original_class is not None else "N/A" 
+        original_data = postprocess([original_data])[0] if postprocess else original_data
         original_data = original_data.tolist()
 
         table.add_row(*map(lambda x: "{:.4f}".format(x), original_data), original_class, "original data")
@@ -145,7 +169,11 @@ def print_cfs(
         for explainer, cfs in sorted(by_explainer.items(), key=lambda items: items[0]):
             if len(cfs) > 0:
                 for cf in cfs:
-                    table.add_row(*map(lambda x: "{:.4f}".format(x), cf.data.tolist()), repr(int(cf.target_class)), cf.explainer)
+                    cf_data = postprocess([cf.data])[0] if postprocess else cf.data
+                    cf_data = cf_data.tolist()
+                    cf_target = postprocess_target([cf.target_class])[0] if postprocess_target else cf.target_class
+                    cf_target = repr(int(cf_target))
+                    table.add_row(*map(lambda x: "{:.4f}".format(x), cf_data), cf_target, cf.explainer)
             else:
                 table.add_row(*["N/A" for _ in original_data], "N/A", explainer)
     

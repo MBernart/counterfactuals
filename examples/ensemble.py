@@ -68,5 +68,8 @@ print(f"Used celery explainers: {[explainer.explainer_name for explainer in ense
 ensemble.fit(data)
 print(f"Ensemble fitting complete")
 
-cfs = ensemble.explain(data[:5], pretty_print=True)
+cfs = ensemble.explain(data[:5],
+                       pretty_print=True,
+                       pretty_print_postprocess=scaler.inverse_transform,
+                       pretty_print_postprocess_target=label_encoder.inverse_transform)
 print(f"Number of generated cfs: {len(cfs)}")

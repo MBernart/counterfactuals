@@ -17,7 +17,7 @@ from explainers_lib.explainers.wachter import WachterExplainer
 # docker build -t wachter-explainer -f explainers/wachter/Dockerfile .
 # docker run --rm -it --network host wachter-explainer
 
-from explainers_lib import TorchModel, Dataset
+from explainers_lib import TorchModel, Dataset, postprocess_cfs, print_cfs
 import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
@@ -57,4 +57,7 @@ explainer = WachterExplainer()
 explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
 
-print(f"Wachter generated counterfactuals: {cfs}")
+# Data postprocessing
+cfs = postprocess_cfs(cfs, scaler.inverse_transform, label_encoder.inverse_transform)
+
+print_cfs(cfs, feature_names=data.features)
