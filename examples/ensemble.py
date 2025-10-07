@@ -23,7 +23,7 @@ from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
 # docker run --rm -it --network host wachter-explainer
 # docker run --rm -it --network host growing-spheres-explainer
 
-from explainers_lib.aggregators import IdealPoint
+from explainers_lib.aggregators import Pareto
 from explainers_lib.datasets import Dataset
 from explainers_lib.ensemble import Ensemble
 from explainers_lib.model import TorchModel
@@ -62,11 +62,11 @@ with open("temp_model.pt", "rb") as f:
 model = TorchModel.deserialize(model_data)
 
 # Ensemble
-ensemble = Ensemble(model, [WachterExplainer(), GrowingSpheresExplainer()], IdealPoint(weights=[4,2,1]))
+ensemble = Ensemble(model, [WachterExplainer(), GrowingSpheresExplainer()], Pareto())
 print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
 
 ensemble.fit(data)
 print(f"Ensemble fitting complete")
 
-cfs = ensemble.explain(data[:5])
-print(f"Generated cfs: {cfs}")
+cfs = ensemble.explain(data[:5], pretty_print=True)
+print(f"Number of generated cfs: {len(cfs)}")

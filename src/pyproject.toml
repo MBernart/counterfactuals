@@ -11,7 +11,8 @@ dependencies = [
    "EasyMCDM",
    "pandas",
    "celery==5.5.3",
-   "redis==6.4.0"
+   "redis==6.4.0",
+   "rich"
 ]
 dynamic = ["version"]
 authors = [
