@@ -25,7 +25,7 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./explainers ./explainers
+COPY ./explainers/growing_spheres/main.py ./explainers/growing_spheres/main.py
 
 USER app
 

@@ -10,7 +10,8 @@ dependencies = [
    "numpy",
    "EasyMCDM",
    "pandas",
-   "celery",
+   "celery==5.5.3",
+   "redis==6.4.0"
 ]
 dynamic = ["version"]
 authors = [
