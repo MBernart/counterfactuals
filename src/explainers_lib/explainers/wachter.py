@@ -154,6 +154,9 @@ class WachterExplainer(Explainer):
         self.random_seed = random_seed
         self.source_df = None
 
+    def __repr__(self) -> str:
+        return f"wachter(lambda_param={repr(self.lambda_param)}, random_seed={repr(self.random_seed)})"
+
     def fit(self, model: Model, data: Dataset) -> None:
         self.source_df = pd.DataFrame(data.data)
         self.source_df
@@ -219,6 +222,7 @@ class WachterExplainer(Explainer):
                 data=counterfactual_data,
                 original_class=original_class,
                 target_class=predicted_class,
+                explainer=repr(self)
             )
 
         except Exception as e:

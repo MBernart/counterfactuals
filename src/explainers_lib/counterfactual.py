@@ -16,6 +16,7 @@ class Counterfactual:
     data: np.ndarray
     original_class: ClassLabel
     target_class: ClassLabel
+    explainer: str
 
     def serialize(self) -> bytes:
         return pickle.dumps(self)
