@@ -1,5 +1,5 @@
 # You can run the explainer locally
-from explainers_lib.explainers.wachter import WachterExplainer
+from explainers_lib.explainers.actionable_recourse import ActionableRecourseExplainer
 
 # Or you can run it via celery
 # from explainers_lib.explainers.celery_explainer import WachterExplainer
@@ -23,7 +23,6 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import StandardScaler
-
 # Dataset preparation
 iris = load_iris()
 
@@ -39,25 +38,22 @@ y = data["species"].values
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
-
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 data = Dataset(X_test, y_test, iris.feature_names, [], iris.feature_names, [], [])
-
 # Loading the pretrained model
 with open("temp_model.pt", "rb") as f:
     model_data = f.read()
-
 model = TorchModel.deserialize(model_data)
-
 # Running the explainer
-explainer = WachterExplainer()
+explainer = ActionableRecourseExplainer()
 explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
 
 # Data postprocessing
 cfs = postprocess_cfs(cfs, scaler.inverse_transform, label_encoder.inverse_transform)
+
 
 print_cfs(cfs, feature_names=data.features)

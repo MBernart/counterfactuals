@@ -1,5 +1,5 @@
-from typing import Any, Callable, Optional
-from celery import group
+from typing import Any, Callable, Optional, List, Dict
+from celery import group, chain
 from .model import Model
 from .explainers import Explainer
 from .explainers.celery_remote import app, try_get_available_explainers
@@ -15,14 +15,14 @@ Postprocessor = Callable[[np.ndarray], np.ndarray]
 
 class Ensemble:
     def __init__(
-        self, model: Model, explainers: list[Explainer], aggregator: Aggregator = All()
+        self, model: Model, explainers: List[Explainer], aggregator: Aggregator = All()
     ):
         """Constructs an ensemble"""
         self.model = model
         self.aggregator = aggregator
 
-        self.explainers = list(filter(lambda explainer: not isinstance(explainer, CeleryExplainer), explainers))
-        self.celery_explainers = list(filter(lambda explainer: isinstance(explainer, CeleryExplainer), explainers))
+        self.explainers = List(filter(lambda explainer: not isinstance(explainer, CeleryExplainer), explainers))
+        self.celery_explainers = List(filter(lambda explainer: isinstance(explainer, CeleryExplainer), explainers))
         self.celery_explainers = ensure_celery_explainers(self.celery_explainers)
 
     def get_explainers_repr(self) -> str:
@@ -53,12 +53,12 @@ class Ensemble:
                 data: Dataset,
                 pretty_print: bool = False,
                 pretty_print_postprocess: Optional[Postprocessor] = None,
-                pretty_print_postprocess_target: Optional[Postprocessor] = None) -> list[Counterfactual]:
+                pretty_print_postprocess_target: Optional[Postprocessor] = None) -> List[Counterfactual]:
         """This method is used to generate counterfactuals"""
 
         task = explain_celery_explainers(self.celery_explainers, self.model, data)
 
-        all_counterfactuals = list()
+        all_counterfactuals = List()
         for explainer in self.explainers:
             cfs = explainer.explain(self.model, data)
             all_counterfactuals.extend(cfs)
@@ -68,7 +68,7 @@ class Ensemble:
             cfs = [Counterfactual.deserialize(counterfactual) for result in results for counterfactual in result['counterfactuals']]
             all_counterfactuals.extend(cfs)
 
-        all_filtered_counterfactuals = list()
+        all_filtered_counterfactuals = List()
         for cfs in cfs_group_by_original_data(all_counterfactuals).values():
             filtered_counterfactuals = self.aggregator(cfs)
             all_filtered_counterfactuals.extend(filtered_counterfactuals)
@@ -78,8 +78,8 @@ class Ensemble:
 
         return all_filtered_counterfactuals
 
-def cfs_group_by_original_data(cfs: list[Counterfactual]) -> dict[bytes, list[Counterfactual]]:
-    table: dict[bytes, list[Counterfactual]] = dict()
+def cfs_group_by_original_data(cfs: List[Counterfactual]) -> Dict[bytes, List[Counterfactual]]:
+    table: Dict[bytes, List[Counterfactual]] = Dict()
 
     for cf in cfs:
         key = cf.original_data.tobytes()
@@ -90,8 +90,8 @@ def cfs_group_by_original_data(cfs: list[Counterfactual]) -> dict[bytes, list[Co
 
     return table
 
-def cfs_group_by_explainer(cfs: list[Counterfactual]) -> dict[str, list[Counterfactual]]:
-    table: dict[str, list[Counterfactual]] = dict()
+def cfs_group_by_explainer(cfs: List[Counterfactual]) -> Dict[str, List[Counterfactual]]:
+    table: Dict[str, List[Counterfactual]] = Dict()
 
     for cf in cfs:
         key = cf.explainer
@@ -102,9 +102,9 @@ def cfs_group_by_explainer(cfs: list[Counterfactual]) -> dict[str, list[Counterf
     
     return table
 
-def postprocess_cfs(cfs: list[Counterfactual],
+def postprocess_cfs(cfs: List[Counterfactual],
                     postprocess: Postprocessor = lambda x: x,
-                    postprocess_target: Postprocessor = lambda x: x) -> list[Counterfactual]:
+                    postprocess_target: Postprocessor = lambda x: x) -> List[Counterfactual]:
     postprocessed_cfs = list()
 
     for cf in cfs:
@@ -116,10 +116,10 @@ def postprocess_cfs(cfs: list[Counterfactual],
     return postprocessed_cfs
 
 def print_cfs(
-        cfs: list[Counterfactual],
-        feature_names: Optional[list[str]] = None,
+        cfs: List[Counterfactual],
+        feature_names: Optional[List[str]] = None,
         data: Optional[Dataset] = None,
-        explainers: Optional[list[str]] = None,
+        explainers: Optional[List[str]] = None,
         model: Optional[Model] = None,
         postprocess: Optional[Postprocessor] = None,
         postprocess_target: Optional[Postprocessor] = None,
@@ -143,7 +143,7 @@ def print_cfs(
         for instance in data.data:
             key = instance.tobytes()
             if key not in by_instance:
-                by_instance[key] = list()
+                by_instance[key] = List()
 
     for bytes, cfs in by_instance.items():
         if not first_section:
@@ -164,7 +164,7 @@ def print_cfs(
         if explainers:
             for explainer in explainers:
                 if explainer not in by_explainer:
-                    by_explainer[explainer] = list()
+                    by_explainer[explainer] = List()
 
         for explainer, cfs in sorted(by_explainer.items(), key=lambda items: items[0]):
             if len(cfs) > 0:
@@ -179,15 +179,15 @@ def print_cfs(
     
     printer.print(table)
 
-def ensure_celery_explainers(requested_explainers: list[CeleryExplainer]) -> list[CeleryExplainer]:
+def ensure_celery_explainers(requested_explainers: List[CeleryExplainer]) -> List[CeleryExplainer]:
     if len(requested_explainers) == 0:
         return []
 
     available_explainers = try_get_available_explainers()
     explainers_set = set(explainer.explainer_name for explainer in requested_explainers)
 
-    explainers = list(filter(lambda explainer: explainer.explainer_name in available_explainers, requested_explainers))
-    missing_explainers = list(explainers_set - available_explainers)
+    explainers = List(filter(lambda explainer: explainer.explainer_name in available_explainers, requested_explainers))
+    missing_explainers = List(explainers_set - available_explainers)
 
     if len(explainers) == 0:
         raise RuntimeError(f"Explainers not found: {missing_explainers}")
@@ -197,32 +197,28 @@ def ensure_celery_explainers(requested_explainers: list[CeleryExplainer]) -> lis
     
     return explainers
 
-def fit_celery_explainers(explainers: list[CeleryExplainer], model: Model, data: Dataset) -> Any | None:
-    if len(explainers) == 0:
+def fit_celery_explainers(explainers: List[CeleryExplainer], model: Model, data: Dataset) -> Optional[Any]:
+    if not explainers:
         return None
 
-    fit_chains = []
-    for explainer in explainers:
-        fit_chains.append(explainer.fit_async(model, data))
+    fit_chains = [explainer.fit_async(model, data) for explainer in explainers]
 
-    return (group(fit_chains) | app.signature('ensemble.collect_results')).apply_async()
+    return chain(group(fit_chains), app.signature('ensemble.collect_results')).apply_async()
 
-def explain_celery_explainers(explainers: list[CeleryExplainer], model: Model, data: Dataset) -> Any | None:
-    if len(explainers) == 0:
+
+def explain_celery_explainers(explainers: List[CeleryExplainer], model: Model, data: Dataset) -> Optional[Any]:
+    if not explainers:
         return None
 
-    explain_chains = []
-    for explainer in explainers:
-        explain_chains.append(explainer.explain_async(model, data))
+    explain_chains = [explainer.explain_async(model, data) for explainer in explainers]
 
-    return (group(explain_chains) | app.signature('ensemble.collect_results')).apply_async()
+    return chain(group(explain_chains), app.signature('ensemble.collect_results')).apply_async()
 
-def repr_celery_explainers(explainers: list[CeleryExplainer]) -> Any | None:
-    if len(explainers) == 0:
+
+def repr_celery_explainers(explainers: List[CeleryExplainer]) -> Optional[Any]:
+    if not explainers:
         return None
 
-    repr_group = []
-    for explainer in explainers:
-        repr_group.append(explainer.repr_async())
-    
-    return (group(repr_group) | app.signature('ensemble.collect_results')).apply_async()
+    repr_group = [explainer.repr_async() for explainer in explainers]
+
+    return chain(group(repr_group), app.signature('ensemble.collect_results')).apply_async()

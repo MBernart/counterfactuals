@@ -4,6 +4,7 @@ from ..datasets import Dataset, Dataset
 from ..model import Model
 from . import Explainer
 from .celery_remote import app
+from typing import List
 
 class CeleryExplainer(Explainer):
     """Celery Explainer"""
@@ -48,7 +49,7 @@ class CeleryExplainer(Explainer):
 
         return group([set_dataset_sig, set_model_sig]) | fit_sig
 
-    def explain(self, model: Model, data: Dataset) -> list[Counterfactual]:
+    def explain(self, model: Model, data: Dataset) -> List[Counterfactual]:
         """This method is used generate the counterfactuals"""
         
         explain_chain = self.explain_async(model, data)
@@ -82,5 +83,9 @@ class WachterExplainer(CeleryExplainer):
         super().__init__("wachter")
 
 class GrowingSpheresExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("growing_spheres")
+
+class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("growing_spheres")

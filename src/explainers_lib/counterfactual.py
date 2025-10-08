@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from typing import TypeAlias, Any
 from numpy.typing import NDArray
 import numpy as np
 import pickle
 
-ClassLabel: TypeAlias = int
-
+ClassLabel = int  # alias for a class label type
 
 # For now not sure whether it should be in a separate directory
 @dataclass

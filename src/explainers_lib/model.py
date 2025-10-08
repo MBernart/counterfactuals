@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import List, Any
-from .counterfactual import ClassLabel
+from typing import List, Any, Tuple
 from .datasets import Dataset
 import pandas as pd
 import tempfile
@@ -20,7 +19,7 @@ class Model:
         pass
         # raise NotImplementedError
 
-    def predict(self, data: Dataset) -> list[ClassLabel]:
+    def predict(self, data: Dataset) -> List[int]:
         """This method is used predict the class of instances"""
         pass
         # raise NotImplementedError
@@ -30,7 +29,7 @@ class Model:
         pass
         # raise NotImplementedError
 
-    def serialize(self) -> tuple[bytes, str]:
+    def serialize(self) -> Tuple[bytes, str]:
         pass
         # raise NotImplementedError
 
@@ -95,7 +94,7 @@ class TFModel(Model):
         x = self._prepare_input(x)
         return self._mymodel.predict(x)
     
-    def serialize(self) -> tuple[bytes, str]:
+    def serialize(self) -> Tuple[bytes, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, 'model.h5')
             self._mymodel.save(path)
@@ -137,7 +136,7 @@ class TorchModel(Model):
     def fit(self, data: Dataset) -> None:
         raise NotImplementedError
 
-    def predict(self, data: Dataset) -> list[ClassLabel]:
+    def predict(self, data: Dataset) -> List[int]:
         labels = []
         for instance in data.data:
             # Convert the instance to a PyTorch Tensor
@@ -155,16 +154,20 @@ class TorchModel(Model):
         return np.array(labels)
 
     def predict_proba(self, data: NDArray[Any]) -> np.ndarray:
-        data = self._torch.tensor(data.data, dtype=self._torch.float32)
+        data = self._torch.tensor(data, dtype=self._torch.float32)
         data = data.to("cuda" if next(self._model.parameters()).is_cuda else "cpu")
 
         with self._torch.no_grad():
-            logits = self._model(data)
-            probabilities = self._torch.nn.functional.softmax(logits, dim=1)
+            output = self._model(data)
+            if output.shape[1] == 1:  # binary classification
+                probs = self._torch.sigmoid(output)
+                probs = self._torch.cat([1 - probs, probs], dim=1)
+            else:
+                probs = self._torch.softmax(output, dim=1)
 
-        return probabilities.cpu().numpy()
+        return probs.cpu().numpy()
 
-    def serialize(self) -> tuple[bytes, str]:
+    def serialize(self) -> Tuple[bytes, str]:
         import io
 
         buffer = io.BytesIO()
@@ -180,5 +183,5 @@ class TorchModel(Model):
         import io
 
         buffer = io.BytesIO(data)
-
-        return TorchModel(torch.jit.load(buffer))
+        model = torch.jit.load(buffer)
+        return TorchModel(model)
