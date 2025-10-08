@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import numpy.typing as npt
-from typing import Any
+from typing import Any, Union
 from tqdm import tqdm
 
 class ScoreCalculator:
@@ -218,7 +218,7 @@ class ScoreCalculator:
 
 
 def get_scores(cfs: npt.NDArray[Any], cf_predicted_classes: npt.NDArray[Any],  
-    x: npt.NDArray[Any], training_data: pd.DataFrame | npt.NDArray[Any],
+    x: npt.NDArray[Any], training_data: Union[pd.DataFrame, npt.NDArray[Any]],
     training_data_predicted_classes: npt.NDArray[Any], continous_indices: npt.NDArray[Any], 
     categorical_indices: npt.NDArray[Any], k_neighbors_feasib: int = 3, k_neighbors_discriminative: int = 9
     ) -> pd.DataFrame:

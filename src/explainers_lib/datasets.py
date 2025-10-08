@@ -1,8 +1,7 @@
-from typing import Any, Iterator, Optional, Self
+from typing import Any, Iterator, Optional, List, Tuple
 import numpy as np
 from numpy.typing import NDArray
 import pickle
-from .counterfactual import ClassLabel
 
 
 class Dataset:
@@ -11,12 +10,12 @@ class Dataset:
     def __init__(
         self,
         data: NDArray[Any],
-        target: list[ClassLabel],
-        features: list[str],
-        categorical_features: list[str],
-        continuous_features: list[str],
-        immutable_features: list[str],
-        allowable_ranges: list[tuple[float, float]],
+        target: List[int],
+        features: List[str],
+        categorical_features: List[str],
+        continuous_features: List[str],
+        immutable_features: List[str],
+        allowable_ranges: List[Tuple[float, float]],
     ):
         self.data = data
         self.target = target
@@ -50,7 +49,7 @@ class Dataset:
     def __iter__(self) -> DatasetIterator:
         return Dataset.DatasetIterator(self)
 
-    def __getitem__(self, key) -> Self:
+    def __getitem__(self, key) -> "Dataset":
         if isinstance(key, slice):
             data = self.data[key.start : key.stop : key.step]
             target = (
@@ -65,7 +64,7 @@ class Dataset:
             raise TypeError("Invalid argument type.")
         return self.like(data, target)
 
-    def like(self, data: NDArray[Any], target: Optional[NDArray[Any]] = None) -> Self:
+    def like(self, data: NDArray[Any], target: Optional[NDArray[Any]] = None) -> "Dataset":
         if target is None:
             target = self.target
         return self.__class__(
@@ -92,7 +91,7 @@ class Dataset:
         )
 
     @staticmethod
-    def deserialize(data: bytes) -> Self:
+    def deserialize(data: bytes) -> "Dataset":
         obj = pickle.loads(data)
         return Dataset(
             obj["data"],

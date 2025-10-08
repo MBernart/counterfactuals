@@ -2,6 +2,7 @@ from logging import warning
 from explainers_lib.datasets import Dataset
 from explainers_lib.model import Model
 from celery import Celery
+from typing import Set
 
 # TODO: make this configurable
 BROKER_URL = 'redis://localhost:6379/0'
@@ -19,7 +20,7 @@ app.conf.update(
     result_serializer='json',
 )
 
-def try_get_available_explainers() -> set[str]:
+def try_get_available_explainers() -> Set[str]:
     i = app.control.inspect()
     try:
         active_queues_by_worker = i.active_queues()
