@@ -1,0 +1,9 @@
+# 2025/10/03 notes
+
+- Add more explainers
+- Questionnaires regarding explainers and classes actionability
+  * We can expect changing class 0->8 should be relatively easy
+- Add more aggregating methods:
+  * Distans from ideal point and antiideal point
+  * Method from original paper (Guidotti)
+- Add more datasets
