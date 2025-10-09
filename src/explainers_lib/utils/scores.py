@@ -1,12 +1,11 @@
 import numpy as np
 import pandas as pd
-import numpy.typing as npt
 from typing import Any, Union
 from tqdm import tqdm
 
 class ScoreCalculator:
 
-    def __init__(self, data: npt.NDArray[Any], data_predictions: npt.NDArray[Any], cont_ind: npt.NDArray[Any], cat_ind: npt.NDArray[Any], random_seed: int = 2023) -> None:
+    def __init__(self, data: np.ndarray, data_predictions: np.ndarray, cont_ind: np.ndarray, cat_ind: np.ndarray, random_seed: int = 2023) -> None:
         '''
         `data`: training data. Cannot containg target columns.
         `data_predictions`: predicted classes for the data.
@@ -26,13 +25,13 @@ class ScoreCalculator:
         self.cat_data = data[:, cat_ind]
 
         # Set ranges
-        self.ranges: npt.NDArray[Any] = self.get_ranges()
+        self.ranges: np.ndarray = self.get_ranges()
 
         # Fit flag
         self.fit_done = False
-        self.cfs: npt.NDArray[Any] | None = None
+        self.cfs: np.ndarray | None = None
 
-    def fit(self, counterfactuals: npt.NDArray[Any], counterfactuals_predictions: npt.NDArray[Any], x: npt.NDArray[Any]) -> None:
+    def fit(self, counterfactuals: np.ndarray, counterfactuals_predictions: np.ndarray, x: np.ndarray) -> None:
         '''
         counterfactuals: np array of shape (n,m)
         x: one instance of shape (m,)
@@ -70,7 +69,7 @@ class ScoreCalculator:
 
 
 
-    def get_ranges(self) -> npt.NDArray[Any]:
+    def get_ranges(self) -> np.ndarray:
         '''
         Get ranges for continous variables.
         Return in form of array([min array, max array])
@@ -82,7 +81,7 @@ class ScoreCalculator:
         return ranges
 
 
-    def heom(self, x: npt.NDArray[Any], y: npt.NDArray[Any]) -> float:
+    def heom(self, x: np.ndarray, y: np.ndarray) -> float:
         '''
         Calculate HEOM distance between x and y. 
         X and Y should not be normalized. 
@@ -103,7 +102,7 @@ class ScoreCalculator:
         return distance
 
 
-    def implausibility(self, counterfactuals: npt.NDArray[Any]) -> float:
+    def implausibility(self, counterfactuals: np.ndarray) -> float:
         '''
         Implausibility measures the level of feasibility of the set of counterfactuals C, whether they could be realistic to be realized. 
         The generated counterfactual is realistic in the sense that it will be sufficiently close to the reference (training) data X. 
@@ -190,7 +189,7 @@ class ScoreCalculator:
         # assert isinstance(rate, float)
         return rate
 
-    def dcg(self, preference_ranking: npt.NDArray[Any]) -> float:
+    def dcg(self, preference_ranking: np.ndarray) -> float:
         '''
         Calculate the adaptation of dcg metric. Calculate the relevance of feature changes among preferred features.
         Changes calculated as featurewise HEOM.
@@ -217,10 +216,10 @@ class ScoreCalculator:
         return dcg_score
 
 
-def get_scores(cfs: npt.NDArray[Any], cf_predicted_classes: npt.NDArray[Any],  
-    x: npt.NDArray[Any], training_data: Union[pd.DataFrame, npt.NDArray[Any]],
-    training_data_predicted_classes: npt.NDArray[Any], continous_indices: npt.NDArray[Any], 
-    categorical_indices: npt.NDArray[Any], k_neighbors_feasib: int = 3, k_neighbors_discriminative: int = 9
+def get_scores(cfs: np.ndarray, cf_predicted_classes: np.ndarray,  
+    x: np.ndarray, training_data: Union[pd.DataFrame, np.ndarray],
+    training_data_predicted_classes: np.ndarray, continous_indices: np.ndarray, 
+    categorical_indices: np.ndarray, k_neighbors_feasib: int = 3, k_neighbors_discriminative: int = 9
     ) -> pd.DataFrame:
     '''
     Obtain metrics evaluation for the data.  

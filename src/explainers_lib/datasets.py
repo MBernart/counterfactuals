@@ -1,7 +1,7 @@
-from typing import Any, Iterator, Optional, List, Tuple
+from typing import Optional, List, Tuple
 import numpy as np
-from numpy.typing import NDArray
 import pickle
+from .counterfactual import ClassLabel
 
 
 class Dataset:
@@ -9,8 +9,8 @@ class Dataset:
 
     def __init__(
         self,
-        data: NDArray[Any],
-        target: List[int],
+        data: np.ndarray,
+        target: List[ClassLabel],
         features: List[str],
         categorical_features: List[str],
         continuous_features: List[str],
@@ -64,7 +64,7 @@ class Dataset:
             raise TypeError("Invalid argument type.")
         return self.like(data, target)
 
-    def like(self, data: NDArray[Any], target: Optional[NDArray[Any]] = None) -> "Dataset":
+    def like(self, data: np.ndarray, target: Optional[np.ndarray] = None) -> "Dataset":
         if target is None:
             target = self.target
         return self.__class__(

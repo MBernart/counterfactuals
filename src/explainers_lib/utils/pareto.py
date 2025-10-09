@@ -1,10 +1,9 @@
 from typing import List, Any
 from EasyMCDM.models.Pareto import Pareto
 import numpy as np
-import numpy.typing as npt  
 
 
-def get_pareto_optimal_mask(data: npt.NDArray[Any], optimization_direction: List[str]) -> npt.NDArray[Any]:
+def get_pareto_optimal_mask(data: np.ndarray, optimization_direction: List[str]) -> np.ndarray:
     '''
     `data`: scores to explore   
     `optimization direction`: list of ['max' and 'min'] of the data feature length
@@ -22,7 +21,7 @@ def get_pareto_optimal_mask(data: npt.NDArray[Any], optimization_direction: List
         
     return mask
 
-def get_ideal_point(data: npt.NDArray[Any], optimization_direction: List[str], pareto_optimal_mask: npt.NDArray[Any]) -> npt.NDArray[Any]:
+def get_ideal_point(data: np.ndarray, optimization_direction: List[str], pareto_optimal_mask: np.ndarray) -> np.ndarray:
     '''
     `data`: scores to explore   
     `optimization direction`: list of ['max' and 'min'] of the data feature length
