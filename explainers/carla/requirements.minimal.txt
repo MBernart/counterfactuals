@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 absl-py==2.1.0
 amqp==5.3.1
 astor==0.8.1
@@ -26,7 +27,6 @@ dice-ml==0.5
 easymcdm==0.5.13
 entrypoints==0.4
 exceptiongroup==1.2.2
--e file:///home/patryk/Desktop/counterfactuals/src
 flask==2.2.5
 fonttools==4.38.0
 future==1.0.0
