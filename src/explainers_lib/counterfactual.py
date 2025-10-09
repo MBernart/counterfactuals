@@ -1,9 +1,12 @@
 from dataclasses import dataclass
-from numpy.typing import NDArray
 import numpy as np
 import pickle
 
-ClassLabel = int  # alias for a class label type
+# TODO: dynamic import based on python version
+# from typing import TypeAlias
+from typing_extensions import TypeAlias
+
+ClassLabel: TypeAlias = int  # alias for a class label type
 
 # For now not sure whether it should be in a separate directory
 @dataclass

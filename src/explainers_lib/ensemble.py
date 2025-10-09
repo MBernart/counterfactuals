@@ -21,8 +21,8 @@ class Ensemble:
         self.model = model
         self.aggregator = aggregator
 
-        self.explainers = List(filter(lambda explainer: not isinstance(explainer, CeleryExplainer), explainers))
-        self.celery_explainers = List(filter(lambda explainer: isinstance(explainer, CeleryExplainer), explainers))
+        self.explainers = list(filter(lambda explainer: not isinstance(explainer, CeleryExplainer), explainers))
+        self.celery_explainers = list(filter(lambda explainer: isinstance(explainer, CeleryExplainer), explainers))
         self.celery_explainers = ensure_celery_explainers(self.celery_explainers)
 
     def get_explainers_repr(self) -> str:
@@ -58,7 +58,7 @@ class Ensemble:
 
         task = explain_celery_explainers(self.celery_explainers, self.model, data)
 
-        all_counterfactuals = List()
+        all_counterfactuals = list()
         for explainer in self.explainers:
             cfs = explainer.explain(self.model, data)
             all_counterfactuals.extend(cfs)
@@ -68,7 +68,7 @@ class Ensemble:
             cfs = [Counterfactual.deserialize(counterfactual) for result in results for counterfactual in result['counterfactuals']]
             all_counterfactuals.extend(cfs)
 
-        all_filtered_counterfactuals = List()
+        all_filtered_counterfactuals = list()
         for cfs in cfs_group_by_original_data(all_counterfactuals).values():
             filtered_counterfactuals = self.aggregator(cfs)
             all_filtered_counterfactuals.extend(filtered_counterfactuals)
@@ -79,7 +79,7 @@ class Ensemble:
         return all_filtered_counterfactuals
 
 def cfs_group_by_original_data(cfs: List[Counterfactual]) -> Dict[bytes, List[Counterfactual]]:
-    table: Dict[bytes, List[Counterfactual]] = Dict()
+    table: Dict[bytes, List[Counterfactual]] = dict()
 
     for cf in cfs:
         key = cf.original_data.tobytes()
@@ -91,7 +91,7 @@ def cfs_group_by_original_data(cfs: List[Counterfactual]) -> Dict[bytes, List[Co
     return table
 
 def cfs_group_by_explainer(cfs: List[Counterfactual]) -> Dict[str, List[Counterfactual]]:
-    table: Dict[str, List[Counterfactual]] = Dict()
+    table: Dict[str, List[Counterfactual]] = dict()
 
     for cf in cfs:
         key = cf.explainer
@@ -143,7 +143,7 @@ def print_cfs(
         for instance in data.data:
             key = instance.tobytes()
             if key not in by_instance:
-                by_instance[key] = List()
+                by_instance[key] = list()
 
     for bytes, cfs in by_instance.items():
         if not first_section:
@@ -164,7 +164,7 @@ def print_cfs(
         if explainers:
             for explainer in explainers:
                 if explainer not in by_explainer:
-                    by_explainer[explainer] = List()
+                    by_explainer[explainer] = list()
 
         for explainer, cfs in sorted(by_explainer.items(), key=lambda items: items[0]):
             if len(cfs) > 0:
@@ -186,8 +186,8 @@ def ensure_celery_explainers(requested_explainers: List[CeleryExplainer]) -> Lis
     available_explainers = try_get_available_explainers()
     explainers_set = set(explainer.explainer_name for explainer in requested_explainers)
 
-    explainers = List(filter(lambda explainer: explainer.explainer_name in available_explainers, requested_explainers))
-    missing_explainers = List(explainers_set - available_explainers)
+    explainers = list(filter(lambda explainer: explainer.explainer_name in available_explainers, requested_explainers))
+    missing_explainers = list(explainers_set - available_explainers)
 
     if len(explainers) == 0:
         raise RuntimeError(f"Explainers not found: {missing_explainers}")

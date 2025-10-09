@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.typing import NDArray
 from typing import List, Any, Tuple
+from .counterfactual import ClassLabel
 from .datasets import Dataset
 import pandas as pd
 import tempfile
@@ -19,7 +19,7 @@ class Model:
         pass
         # raise NotImplementedError
 
-    def predict(self, data: Dataset) -> List[int]:
+    def predict(self, data: Dataset) -> List[ClassLabel]:
         """This method is used predict the class of instances"""
         pass
         # raise NotImplementedError
@@ -136,7 +136,7 @@ class TorchModel(Model):
     def fit(self, data: Dataset) -> None:
         raise NotImplementedError
 
-    def predict(self, data: Dataset) -> List[int]:
+    def predict(self, data: Dataset) -> List[ClassLabel]:
         labels = []
         for instance in data.data:
             # Convert the instance to a PyTorch Tensor
@@ -153,7 +153,7 @@ class TorchModel(Model):
                 labels.append(int(self._torch.argmax(preds)))
         return np.array(labels)
 
-    def predict_proba(self, data: NDArray[Any]) -> np.ndarray:
+    def predict_proba(self, data: np.ndarray) -> np.ndarray:
         data = self._torch.tensor(data, dtype=self._torch.float32)
         data = data.to("cuda" if next(self._model.parameters()).is_cuda else "cpu")
 
