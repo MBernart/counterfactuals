@@ -31,7 +31,13 @@ class Ensemble:
         explainers = [repr(explainer) for explainer in self.explainers]
 
         if task:
-            explainers.extend(task.get())
+            reprs = task.get()
+            if isinstance(reprs, list):
+                explainers.extend(reprs)
+            elif isinstance(reprs, str):
+                explainers.append(reprs)
+            else:
+                raise RuntimeError(f"Unkown explainers repr format: {reprs}")
 
         return explainers
 
@@ -65,7 +71,12 @@ class Ensemble:
 
         if task:
             results = task.get()
-            cfs = [Counterfactual.deserialize(counterfactual) for result in results for counterfactual in result['counterfactuals']]
+            if isinstance(results, list):
+                cfs = [Counterfactual.deserialize(counterfactual) for result in results for counterfactual in result['counterfactuals']]
+            elif isinstance(results, dict):
+                cfs = [Counterfactual.deserialize(counterfactual) for counterfactual in results['counterfactuals']]
+            else:
+                raise RuntimeError(f"Unknown results format: {results}")
             all_counterfactuals.extend(cfs)
 
         all_filtered_counterfactuals = list()

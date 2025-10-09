@@ -106,7 +106,7 @@ class TFModel(Model):
             pickle.dumps({
                 'model_bytes': model_bytes,
                 'columns_order': self.columns_order
-            }), 
+            }, protocol=4), 
             "tensorflow"
         )
 

@@ -1,3 +1,4 @@
+import io
 from typing import Optional, List, Tuple
 import numpy as np
 import pickle
@@ -18,7 +19,7 @@ class Dataset:
         allowable_ranges: List[Tuple[float, float]],
     ):
         self.data = data
-        self.target = target
+        self.target = target.tolist() if isinstance(target, np.ndarray) else target
         self.features = features
         self.categorical_features = categorical_features
         self.continuous_features = continuous_features
@@ -76,25 +77,39 @@ class Dataset:
             self.immutable_features,
             self.allowable_ranges,
         )
+    
+    @staticmethod
+    def _array_to_bytes(arr: np.ndarray) -> bytes:
+        """Helper to serialize a single np.ndarray to bytes."""
+        with io.BytesIO() as f:
+            np.save(f, arr)
+            return f.getvalue()
+
+    @staticmethod
+    def _bytes_to_array(b: bytes) -> np.ndarray:
+        """Helper to deserialize bytes back into a single np.ndarray."""
+        with io.BytesIO(b) as f:
+            return np.load(f, allow_pickle=False)
 
     def serialize(self) -> bytes:
         return pickle.dumps(
             {
-                "data": self.data,
+                "data": Dataset._array_to_bytes(self.data),
                 "target": self.target,
                 "features": self.features,
                 "categorical_features": self.categorical_features,
                 "continuous_features": self.continuous_features,
                 "immutable_features": self.immutable_features,
                 "allowable_ranges": self.allowable_ranges,
-            }
+            },
+            protocol=4
         )
 
     @staticmethod
     def deserialize(data: bytes) -> "Dataset":
         obj = pickle.loads(data)
         return Dataset(
-            obj["data"],
+            Dataset._bytes_to_array(obj["data"]),
             obj["target"],
             obj["features"],
             obj["categorical_features"],

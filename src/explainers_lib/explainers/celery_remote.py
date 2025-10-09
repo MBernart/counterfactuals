@@ -15,9 +15,9 @@ app = Celery(
 )
 
 app.conf.update(
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
+    task_serializer='pickle',
+    accept_content=['json', 'pickle'],
+    result_serializer='pickle',
 )
 
 def try_get_available_explainers() -> Set[str]:
