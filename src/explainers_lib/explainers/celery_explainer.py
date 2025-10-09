@@ -88,4 +88,4 @@ class GrowingSpheresExplainer(CeleryExplainer):
 
 class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
-        super().__init__("growing_spheres")
+        super().__init__("actionable_recourse")
