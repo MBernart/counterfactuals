@@ -86,6 +86,7 @@ class GrowingSpheresExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("growing_spheres")
 
+# Carla explainers
 class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
-        super().__init__("actionable_recourse")
+        super().__init__("carla_actionable_recourse")
