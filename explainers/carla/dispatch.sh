@@ -27,6 +27,9 @@ case "$COMMAND" in
     "dice")
         celery -A explainers.carla.dice worker -l info -n carla_dice_worker@%h -Q carla_dice,celery
         ;;
+    "face")
+        celery -A explainers.carla.face worker -l info -n carla_face_worker@%h -Q carla_face,celery
+        ;;
 
     *)
         echo "ERROR: Unknown command '$COMMAND'."

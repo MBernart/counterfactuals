@@ -1,5 +1,5 @@
 # You can run the explainer locally
-from explainers_lib.explainers.carla.dice import DiceExplainer
+from explainers_lib.explainers.carla.face import FaceExplainer
 
 # Or you can run it via celery
 # from explainers_lib.explainers.celery_explainer import WachterExplainer
@@ -52,7 +52,7 @@ with open("temp_model.pt", "rb") as f:
 model = TorchModel.deserialize(model_data)
 
 # Running the explainer
-explainer = DiceExplainer()
+explainer = FaceExplainer()
 explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
 
