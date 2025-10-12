@@ -1,0 +1,38 @@
+FROM python:3.10-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN pip install --upgrade pip
+
+COPY ./src ./src
+RUN pip install --user --no-cache-dir -e ./src
+
+COPY ./explainers/alibi/requirements.minimal.txt ./requirements.txt
+RUN pip install --user --no-cache-dir -r ./requirements.txt
+
+FROM python:3.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN useradd --create-home --shell /bin/bash app
+
+WORKDIR /app
+
+COPY --from=builder /root/.local /home/app/.local
+
+COPY ./src ./src
+COPY ./explainers/alibi/cfproto.py ./explainers/alibi/cfproto.py
+COPY ./explainers/alibi/dispatch.sh ./dispatch.sh
+
+USER app
+
+ENV PATH=/home/app/.local/bin:$PATH
+
+EXPOSE 8000
+
+ENTRYPOINT ["./dispatch.sh"]
+CMD ["help"]
