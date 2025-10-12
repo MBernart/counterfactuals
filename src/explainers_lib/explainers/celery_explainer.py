@@ -95,3 +95,7 @@ class ActionableRecourseExplainer(CeleryExplainer):
 class AlibiCFProto(CeleryExplainer):
     def __init__(self):
         super().__init__("alibi_cfproto")
+
+class AlibiCFRL(CeleryExplainer):
+    def __init__(self):
+        super().__init__("alibi_cfrl")
