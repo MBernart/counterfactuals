@@ -1,0 +1,5 @@
+alibi[tensorflow]
+typing_extensions
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.7.0+cpu

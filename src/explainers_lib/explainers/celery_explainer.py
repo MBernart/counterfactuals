@@ -90,3 +90,8 @@ class GrowingSpheresExplainer(CeleryExplainer):
 class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("carla_actionable_recourse")
+
+# Alibi Explain
+class AlibiCFProto(CeleryExplainer):
+    def __init__(self):
+        super().__init__("alibi_cfproto")

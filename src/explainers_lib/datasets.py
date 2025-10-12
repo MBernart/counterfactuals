@@ -4,7 +4,6 @@ import numpy as np
 import pickle
 from .counterfactual import ClassLabel
 
-
 class Dataset:
     """This is a helper class"""
 
