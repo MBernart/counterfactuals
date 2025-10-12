@@ -4,7 +4,7 @@ set -e
 
 usage() {
     echo "Usage: docker run <image> <command>"
-    echo "Available commands: help, cfproto"
+    echo "Available commands: help, cfproto, cfrl"
 }
 
 if [ -z "$1" ]; then
@@ -22,7 +22,11 @@ case "$COMMAND" in
         ;;
 
     "cfproto")
-	    celery -A explainers.alibi.cfproto worker -l info -n alibi_cfproto@%h -Q alibi_cfproto,celery
+	    celery -A explainers.alibi.cfproto worker -l info -n alibi_cfproto_worker@%h -Q alibi_cfproto,celery
+        ;;
+
+    "cfrl")
+	    celery -A explainers.alibi.cfrl worker -l info -n alibi_cfrl_worker@%h -Q alibi_cfrl,celery
         ;;
 
     *)
