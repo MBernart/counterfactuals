@@ -26,6 +26,7 @@ COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
 COPY ./explainers/alibi/cfproto.py ./explainers/alibi/cfproto.py
+COPY ./explainers/alibi/cfrl.py ./explainers/alibi/cfrl.py
 COPY ./explainers/alibi/dispatch.sh ./dispatch.sh
 
 USER app
