@@ -91,6 +91,14 @@ class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("carla_actionable_recourse")
 
+class DiceExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("carla_dice")
+
+class FaceExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("carla_face")
+
 # Alibi Explain
 class AlibiCFProto(CeleryExplainer):
     def __init__(self):

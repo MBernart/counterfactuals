@@ -6,6 +6,10 @@ from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
 # from explainers_lib.explainers.celery_explainer import WachterExplainer
 # from explainers_lib.explainers.celery_explainer import GrowingSpheresExplainer
 from explainers_lib.explainers.celery_explainer import ActionableRecourseExplainer
+from explainers_lib.explainers.celery_explainer import FaceExplainer
+from explainers_lib.explainers.celery_explainer import DiceExplainer
+from explainers_lib.explainers.celery_explainer import AlibiCFProto
+from explainers_lib.explainers.celery_explainer import AlibiCFRL
 
 # To do this, start the redis message broker
 # docker run -d -p 6379:6379 --name celery-redis redis
@@ -63,7 +67,12 @@ with open("temp_model.pt", "rb") as f:
 model = TorchModel.deserialize(model_data)
 
 # Ensemble
-ensemble = Ensemble(model, [WachterExplainer(), GrowingSpheresExplainer(), ActionableRecourseExplainer()], Pareto())
+ensemble = Ensemble(
+    model,
+    [WachterExplainer(), GrowingSpheresExplainer(),                   # Local explainers
+     ActionableRecourseExplainer(), DiceExplainer(), FaceExplainer(), # Carla explainers
+     AlibiCFProto(), AlibiCFRL()],                                    # Alibi explainers
+    Pareto())
 print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
 
 ensemble.fit(data)

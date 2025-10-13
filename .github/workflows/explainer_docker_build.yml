@@ -12,6 +12,8 @@ on:
         - all
         - growing_spheres
         - wachter
+        - carla
+        - alibi
       tag:
         description: 'Docker tag to use'
         required: true
@@ -33,7 +35,7 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ github.event.inputs.explainer }}" = "all" ]; then
-            echo 'matrix=["growing_spheres","wachter"]' >> $GITHUB_OUTPUT
+            echo 'matrix=["growing_spheres","wachter","carla","alibi"]' >> $GITHUB_OUTPUT
           else
             echo "matrix=[\"${{ github.event.inputs.explainer }}\"]" >> $GITHUB_OUTPUT
           fi
