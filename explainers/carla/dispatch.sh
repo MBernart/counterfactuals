@@ -4,7 +4,7 @@ set -e
 
 usage() {
     echo "Usage: docker run <image> <command>"
-    echo "Available commands: help, actionable_recourse"
+    echo "Available commands: help, actionable_recourse, dice, face"
 }
 
 if [ -z "$1" ]; then
