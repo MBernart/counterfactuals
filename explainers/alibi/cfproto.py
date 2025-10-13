@@ -19,7 +19,7 @@ class CFProto(Explainer):
     def fit(self, model: Model, data: Dataset) -> None:
         shape = (1,) + data.data.shape[1:]
         self.cf = CounterfactualProto(
-            lambda x: model.predict_proba(data.like(x)),
+            lambda x: model.predict_proba(x),
             shape,
             kappa=0.,
             beta=.1,

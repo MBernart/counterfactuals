@@ -54,7 +54,7 @@ class CFRL(Explainer):
         self.train_steps = max_possible_steps if self.train_steps > max_possible_steps else self.train_steps
 
         self.explainer = CounterfactualRLTabular(
-            predictor=lambda x: model.predict_proba(data.like(x)),
+            predictor=lambda x: model.predict_proba(x),
             encoder=encoder,
             decoder=DecoderWrapper(decoder),
             latent_dim=self.latent_dim,
