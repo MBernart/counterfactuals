@@ -12,7 +12,8 @@ dependencies = [
    "pandas",
    "celery==5.2.7",
    "redis==4.5.5",
-   "rich"
+   "rich",
+   "scikit-learn"
 ]
 dynamic = ["version"]
 authors = [
