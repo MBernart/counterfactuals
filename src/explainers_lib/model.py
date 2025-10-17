@@ -39,6 +39,8 @@ class Model:
             return TFModel.deserialize(data)
         elif type == "torch":
             return TorchModel.deserialize(data)
+        elif type == "sklearn":
+            return SklearnModel.deserialize(data)
         raise RuntimeError(f"Unknown model type: {type}")
 
 class TFModel(Model):
@@ -185,3 +187,33 @@ class TorchModel(Model):
         buffer = io.BytesIO(data)
         model = torch.jit.load(buffer)
         return TorchModel(model)
+
+class SklearnModel(Model):
+    def __init__(self, model):
+        self._model = model
+
+    @property
+    def raw_model(self):
+        return self._model
+
+    @property
+    def backend(self):
+        return "sklearn"
+
+    def fit(self, X, y):
+        self._model.fit(X, y)
+
+    def predict(self, X):
+        return self._model.predict(X)
+
+    def predict_proba(self, X):
+        return self._model.predict_proba(X)
+
+    def serialize(self) -> Tuple[bytes, str]:
+        model_bytes = pickle.dumps(self._model, protocol=4)
+        return model_bytes, "sklearn"
+
+    @staticmethod
+    def deserialize(data: bytes) -> "SklearnModel":
+        model = pickle.loads(data)
+        return SklearnModel(model)
