@@ -83,3 +83,65 @@ cfs = ensemble.explain(data[:5],
                        pretty_print_postprocess=scaler.inverse_transform,
                        pretty_print_postprocess_target=label_encoder.inverse_transform)
 print(f"Number of generated cfs: {len(cfs)}")
+
+import matplotlib.pyplot as plt
+import numpy as np
+import shap
+from collections import defaultdict
+
+background_summary = shap.kmeans(X_train, 10)
+
+def predict_class_0(x):
+    return model.predict_proba(x)[:, 0]
+def predict_class_1(x):
+    return model.predict_proba(x)[:, 1]
+def predict_class_2(x):
+    return model.predict_proba(x)[:, 2]
+
+explainers = [
+    shap.KernelExplainer(predict_class_0, background_summary, link="logit"),
+    shap.KernelExplainer(predict_class_1, background_summary, link="logit"),
+    shap.KernelExplainer(predict_class_2, background_summary, link="logit"),
+]
+
+grouped_cfs = defaultdict(list)
+for cf in cfs:
+    key = cf.original_data.tobytes()
+    grouped_cfs[key].append(cf)
+
+for original_data_bytes, cfs_for_source in grouped_cfs.items():
+    original_data = np.frombuffer(original_data_bytes, dtype=np.float64).reshape(1, -1)
+    original_class = cfs_for_source[0].original_class
+    original_class_name = label_encoder.inverse_transform([original_class])[0]
+
+    plt.figure(figsize=(10, 6))
+    explainer_orig = explainers[original_class]
+    shap_values_orig = explainer_orig.shap_values(original_data)
+    """  """
+    explanation_orig = shap.Explanation(
+        values=shap_values_orig[0],
+        base_values=explainer_orig.expected_value,
+        data=original_data[0],
+        feature_names=iris.feature_names
+    )
+    plt.title(f"SHAP Explanation for Original Prediction ({original_class_name})", fontsize=14, pad=20)
+    shap.plots.waterfall(explanation_orig, max_display=10, show=True)
+
+    for cf in cfs_for_source:
+        plt.figure(figsize=(10, 6))
+        x_cf = cf.data.reshape(1, -1)
+        target_class = cf.target_class
+
+        explainer_cf = explainers[target_class]
+        shap_values_cf = explainer_cf.shap_values(x_cf)
+
+        explanation_cf = shap.Explanation(
+            values=shap_values_cf[0],
+            base_values=explainer_cf.expected_value,
+            data=x_cf[0],
+            feature_names=iris.feature_names
+        )
+        target_class_name = label_encoder.inverse_transform([target_class])[0]
+        plt.title(f"Counterfactual to {target_class_name} by {cf.explainer}", fontsize=14, pad=20)
+        shap.plots.waterfall(explanation_cf, max_display=10, show=True)
+
