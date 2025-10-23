@@ -1,0 +1,5 @@
+1. "A Comparative Study of Counterfactual Explanation Methods and Aggregation Techniques"
+2. "Evaluating Counterfactual Explainability: Integrating Generation, Aggregation, and Human Insight"
+3. "Towards Human-Centric Counterfactual Explainability: A Framework and User Study"
+4. "Human Evaluation of Counterfactual Explanations and Aggregation Methods"
+5. "A Framework for Counterfactual Explanations: Comparative Analysis and User-Centered Evaluation"
