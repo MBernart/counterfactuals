@@ -59,7 +59,8 @@ class Ensemble:
                 data: Dataset,
                 pretty_print: bool = False,
                 pretty_print_postprocess: Optional[Postprocessor] = None,
-                pretty_print_postprocess_target: Optional[Postprocessor] = None) -> List[Counterfactual]:
+                pretty_print_postprocess_target: Optional[Postprocessor] = None,
+                feature_names: Optional[List[str]] = None) -> List[Counterfactual]:
         """This method is used to generate counterfactuals"""
 
         task = explain_celery_explainers(self.celery_explainers, self.model, data)
@@ -85,7 +86,7 @@ class Ensemble:
             all_filtered_counterfactuals.extend(filtered_counterfactuals)
         
         if pretty_print:
-            print_cfs(all_filtered_counterfactuals, data=data, model=self.model, explainers=self.get_explainers_repr(), postprocess=pretty_print_postprocess, postprocess_target=pretty_print_postprocess_target)
+            print_cfs(all_filtered_counterfactuals, data=data, model=self.model, explainers=self.get_explainers_repr(), postprocess=pretty_print_postprocess, postprocess_target=pretty_print_postprocess_target, feature_names=feature_names)
 
         return all_filtered_counterfactuals
 
@@ -169,7 +170,8 @@ def print_cfs(
         original_data = postprocess([original_data])[0] if postprocess else original_data
         original_data = original_data.tolist()
 
-        table.add_row(*map(lambda x: "{:.4f}".format(x), original_data), original_class, "original data")
+        table.add_row(*map(lambda x: "{:.4f}".format(x) if isinstance(x, (int, float)) else str(x), original_data), original_class, "original data")
+
 
         by_explainer = cfs_group_by_explainer(cfs)
         if explainers:
@@ -184,7 +186,7 @@ def print_cfs(
                     cf_data = cf_data.tolist()
                     cf_target = postprocess_target([cf.target_class])[0] if postprocess_target else cf.target_class
                     cf_target = repr(int(cf_target))
-                    table.add_row(*map(lambda x: "{:.4f}".format(x), cf_data), cf_target, cf.explainer)
+                    table.add_row(*map(lambda x: "{:.4f}".format(x) if isinstance(x, (int, float)) else str(x), cf_data), cf_target, cf.explainer)
             else:
                 table.add_row(*["N/A" for _ in original_data], "N/A", explainer)
     
