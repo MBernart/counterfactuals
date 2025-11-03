@@ -25,7 +25,7 @@ class Ensemble:
         self.celery_explainers = list(filter(lambda explainer: isinstance(explainer, CeleryExplainer), explainers))
         self.celery_explainers = ensure_celery_explainers(self.celery_explainers)
 
-    def get_explainers_repr(self) -> str:
+    def get_explainers_repr(self) -> List[str]:
         task = repr_celery_explainers(self.celery_explainers)
 
         explainers = [repr(explainer) for explainer in self.explainers]
