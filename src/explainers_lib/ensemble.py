@@ -4,7 +4,7 @@ from .model import Model
 from .explainers import Explainer
 from .explainers.celery_remote import app, try_get_available_explainers
 from .explainers.celery_explainer import CeleryExplainer
-from .aggregators import Aggregator, All, Pareto
+from .aggregators import Aggregator, All, ScoreBasedAggregator
 from .counterfactual import Counterfactual
 from .datasets import Dataset
 import numpy as np
@@ -49,7 +49,7 @@ class Ensemble:
         for explainer in self.explainers:
             explainer.fit(self.model, data)
 
-        if isinstance(self.aggregator, Pareto):
+        if isinstance(self.aggregator, ScoreBasedAggregator):
             self.aggregator.fit(self.model, data)
 
         if task:
