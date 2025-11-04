@@ -7,7 +7,7 @@ from explainers_lib.explainers.celery_explainer import AlibiCFProto
 from explainers_lib.explainers.celery_explainer import AlibiCFRL
 from explainers_lib.aggregators import Pareto, IdealPoint, BalancedPoint, TOPSIS, DensityBased, ScoreBasedAggregator
 from explainers_lib.datasets import Dataset
-from explainers_lib.ensemble import Ensemble, print_cfs
+from explainers_lib.ensemble import Ensemble, print_cfs, cfs_group_by_original_data
 from explainers_lib.model import TorchModel
 from sklearn.datasets import load_iris
 import pandas as pd
@@ -63,6 +63,10 @@ for selector in [Pareto(), IdealPoint(), BalancedPoint(), TOPSIS(), DensityBased
     if isinstance(selector, ScoreBasedAggregator):
         selector.fit(model, data)
 
-    selected = selector(all_cfs)
+    all_selected_cfs = list()
+    for cfs in cfs_group_by_original_data(all_cfs).values():
+        selected_cfs = selector(cfs)
+        all_selected_cfs.extend(selected_cfs)
+
     print(selector)
-    print_cfs(selected, data.features, data[:5], explainers, model, scaler.inverse_transform, label_encoder.inverse_transform)
+    print_cfs(all_selected_cfs, data.features, data[:5], explainers, model, scaler.inverse_transform, label_encoder.inverse_transform)
