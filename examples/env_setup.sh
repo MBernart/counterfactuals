@@ -1,6 +1,12 @@
 #!/bin/bash
 
-docker run --rm -d -p 6379:6379 --name celery-redis redis
+set -xe
+
+docker pull redis:8.2.3
+docker pull cfe.cs.put.poznan.pl/counterfactuals-alibi
+docker pull cfe.cs.put.poznan.pl/counterfactuals-carla
+
+docker run --rm -d -p 6379:6379 --name celery-redis redis:8.2.3
 
 # celery -A explainers.wachter.main worker -l info -n wachter_worker@%h -Q wachter,celery
 # celery -A explainers.growing_spheres.main worker -l info -n growing_spheres_worker@%h -Q growing_spheres,celery
