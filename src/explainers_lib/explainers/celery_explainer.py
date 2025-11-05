@@ -82,11 +82,12 @@ class WachterExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("wachter")
 
-class GrowingSpheresExplainer(CeleryExplainer):
-    def __init__(self):
-        super().__init__("growing_spheres")
 
 # Carla explainers
+class GrowingSpheresExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("carla_growing_spheres")
+
 class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("carla_actionable_recourse")

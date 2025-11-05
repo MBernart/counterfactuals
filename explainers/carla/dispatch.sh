@@ -4,7 +4,7 @@ set -e
 
 usage() {
     echo "Usage: docker run <image> <command>"
-    echo "Available commands: help, actionable_recourse, dice, face"
+    echo "Available commands: help, actionable_recourse, dice, face, growing_spheres"
 }
 
 if [ -z "$1" ]; then
@@ -26,6 +26,9 @@ case "$COMMAND" in
         ;;
     "dice")
         celery -A explainers.carla.dice worker -l info -n carla_dice_worker@%h -Q carla_dice,celery
+        ;;
+    "growing_spheres")
+        celery -A explainers.carla.growing_spheres worker -l info -n carla_growing_spheres_worker@%h -Q carla_growing_spheres,celery
         ;;
     "face")
         celery -A explainers.carla.face worker -l info -n carla_face_worker@%h -Q carla_face,celery

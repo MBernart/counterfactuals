@@ -22,6 +22,7 @@ RUN pip install --no-cache-dir --user --upgrade --no-deps -r ./requirements.txt
 COPY ./explainers/carla/actionable_recourse.py ./explainers/carla/actionable_recourse.py
 COPY ./explainers/carla/dice.py ./explainers/carla/dice.py
 COPY ./explainers/carla/face.py ./explainers/carla/face.py
+COPY ./explainers/carla/growing_spheres.py ./explainers/carla/growing_spheres.py
 COPY ./explainers/carla/dispatch.sh ./dispatch.sh
 
 EXPOSE 8000
