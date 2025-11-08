@@ -1,35 +1,94 @@
 import io
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any, Dict
 import numpy as np
+import pandas as pd
 import pickle
 from .counterfactual import ClassLabel
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
 class Dataset:
     """This is a helper class"""
 
     def __init__(
         self,
-        data: np.ndarray,
-        target: List[ClassLabel],
+        df: pd.DataFrame,
+        target: List[ClassLabel] | np.ndarray,
         features: List[str],
-        categorical_features: List[str],
-        continuous_features: List[str],
-        immutable_features: List[str],
-        allowable_ranges: List[Tuple[float, float]],
+        immutable_features: List[str] = [],
+        categorical_features: List[str] = [],
+        categorical_values: Dict[str, List[Any]] = {},
+        continuous_features: List[str] = [],
+        allowable_ranges: Dict[str, Tuple[float, float]] = {},
     ):
-        self.data = data
-        self.target = target.tolist() if isinstance(target, np.ndarray) else target
-        self.features = features
-        self.categorical_features = categorical_features
-        self.continuous_features = continuous_features
-        self.immutable_features = immutable_features
-        self.allowable_ranges = allowable_ranges
+        self.df = df
+        self.target: List[ClassLabel] = target.tolist() if isinstance(target, np.ndarray) else target
 
-        self.categorical_features_ids = [
-            features.index(f) for f in categorical_features
-        ]
-        self.continuous_features_ids = [features.index(f) for f in continuous_features]
-        self.immutable_features_ids = [features.index(f) for f in immutable_features]
+        self.features             = features
+        self.immutable_features   = immutable_features
+
+        self.categorical_features = categorical_features
+        self.categorical_values   = categorical_values
+
+        self.continuous_features  = continuous_features
+        self.allowable_ranges     = allowable_ranges
+
+        self.categorical_features_ids = [features.index(f) for f in categorical_features]
+        self.continuous_features_ids  = [features.index(f) for f in continuous_features]
+        self.immutable_features_ids   = [features.index(f) for f in immutable_features]
+
+        self.preprocessor = self.get_preprocessor()
+        self.data: np.ndarray = self.preprocessor.fit_transform(self.df)
+
+    def get_preprocessor(self) -> ColumnTransformer:
+        """
+        Creates a ColumnTransformer with pipelines for numerical and
+        categorical features.
+        """
+        self._numerical_transformer = Pipeline(steps=[
+            ('scaler', StandardScaler())
+        ])
+
+        self._categorical_transformer = Pipeline(steps=[
+            ('onehot', OneHotEncoder(handle_unknown='error', sparse_output=False))
+        ])
+
+        return ColumnTransformer(
+            transformers=[
+                ('num', self._numerical_transformer, self.continuous_features),
+                ('cat', self._categorical_transformer, self.categorical_features)
+            ],
+            remainder='drop'
+        )
+
+    def inverse_transform(self, data: np.ndarray) -> pd.DataFrame:
+        """
+        Inverse transforms preprocessed data back into a DataFrame
+        in the original feature space.
+        """
+        num_features_len = len(self.continuous_features)
+
+        data_num = data[:, :num_features_len]
+        data_cat = data[:, num_features_len:]
+
+        try:
+            inv_data_num = self.preprocessor.named_transformers_['num'].inverse_transform(data_num)
+            inv_data_cat = self.preprocessor.named_transformers_['cat'].inverse_transform(data_cat)
+        except Exception as e:
+            print(f"Error during inverse transform: {e}")
+            print("Ensure the input data shape matches the preprocessor's output.")
+            print(f"Expected num features: {num_features_len}, cat features: {len(self.categorical_features)}")
+            print(f"Received data shape: {data.shape}")
+            raise
+
+        inv_data_full = np.hstack((inv_data_num, inv_data_cat))
+
+        column_names = self.continuous_features + self.categorical_features
+        df_reconstructed = pd.DataFrame(inv_data_full, columns=column_names)
+
+        original_order = [f for f in self.features if f in df_reconstructed.columns]        
+        return df_reconstructed[original_order]
 
     class DatasetIterator:
         def __init__(self, dataset: "Dataset"):
@@ -67,6 +126,7 @@ class Dataset:
     def like(self, data: np.ndarray, target: Optional[np.ndarray] = None) -> "Dataset":
         if target is None:
             target = self.target
+        # TODO: refactor __class__ call
         return self.__class__(
             data,
             target,
@@ -91,6 +151,7 @@ class Dataset:
             return np.load(f, allow_pickle=False)
 
     def serialize(self) -> bytes:
+        # TODO: refactor serialization
         return pickle.dumps(
             {
                 "data": Dataset._array_to_bytes(self.data),
@@ -107,6 +168,7 @@ class Dataset:
     @staticmethod
     def deserialize(data: bytes) -> "Dataset":
         obj = pickle.loads(data)
+        # TODO: refactor deserialization
         return Dataset(
             Dataset._bytes_to_array(obj["data"]),
             obj["target"],
