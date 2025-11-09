@@ -13,7 +13,8 @@ dependencies = [
    "celery==5.2.7",
    "redis==4.5.5",
    "rich",
-   "scikit-learn"
+   "scikit-learn",
+   "pyarrow"
 ]
 dynamic = ["version"]
 authors = [

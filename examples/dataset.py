@@ -13,7 +13,7 @@ num = vars.loc[(vars['type'] == 'Integer') & (vars['role'] == 'Feature'), 'name'
 
 print(X)
 
-data = Dataset(X, y['G3'].tolist(), X.columns.tolist(),
+ds = Dataset(X, y['G3'].tolist(), X.columns.tolist(),
                immutable_features=["sex", "age"],
                categorical_features=cat,
                continuous_features=num,
@@ -32,6 +32,8 @@ data = Dataset(X, y['G3'].tolist(), X.columns.tolist(),
                    "absences": (0, 93),
                })
 
-print(data.data.shape)
+print(ds.data.shape)
 
-print(data.inverse_transform(data.data))
+print(ds.inverse_transform(ds.data))
+
+print(ds.inverse_transform(ds.deserialize(ds.serialize()).data))

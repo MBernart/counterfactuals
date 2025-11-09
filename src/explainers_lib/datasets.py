@@ -138,28 +138,28 @@ class Dataset:
         )
     
     @staticmethod
-    def _array_to_bytes(arr: np.ndarray) -> bytes:
-        """Helper to serialize a single np.ndarray to bytes."""
+    def _dataframe_to_bytes(df: pd.DataFrame) -> bytes:
+        """Helper to serialize a single pd.DataFrame to Parquet bytes."""
         with io.BytesIO() as f:
-            np.save(f, arr)
+            df.to_parquet(f, engine='pyarrow')
             return f.getvalue()
 
     @staticmethod
-    def _bytes_to_array(b: bytes) -> np.ndarray:
-        """Helper to deserialize bytes back into a single np.ndarray."""
+    def _bytes_to_dataframe(b: bytes) -> pd.DataFrame:
+        """Helper to deserialize Parquet bytes back into a single pd.DataFrame."""
         with io.BytesIO(b) as f:
-            return np.load(f, allow_pickle=False)
+            return pd.read_parquet(f, engine='pyarrow')
 
     def serialize(self) -> bytes:
-        # TODO: refactor serialization
         return pickle.dumps(
             {
-                "data": Dataset._array_to_bytes(self.data),
+                "df": Dataset._dataframe_to_bytes(self.df),
                 "target": self.target,
                 "features": self.features,
-                "categorical_features": self.categorical_features,
-                "continuous_features": self.continuous_features,
                 "immutable_features": self.immutable_features,
+                "categorical_features": self.categorical_features,
+                "categorical_values": self.categorical_values,
+                "continuous_features": self.continuous_features,
                 "allowable_ranges": self.allowable_ranges,
             },
             protocol=4
@@ -168,13 +168,13 @@ class Dataset:
     @staticmethod
     def deserialize(data: bytes) -> "Dataset":
         obj = pickle.loads(data)
-        # TODO: refactor deserialization
         return Dataset(
-            Dataset._bytes_to_array(obj["data"]),
+            Dataset._bytes_to_dataframe(obj["df"]),
             obj["target"],
             obj["features"],
-            obj["categorical_features"],
-            obj["continuous_features"],
-            obj["immutable_features"],
-            obj["allowable_ranges"],
+            immutable_features=obj["immutable_features"],
+            categorical_features=obj["categorical_features"],
+            categorical_values=obj["categorical_values"],
+            continuous_features=obj["continuous_features"],
+            allowable_ranges=obj["allowable_ranges"],
         )
