@@ -37,3 +37,6 @@ print(ds.data.shape)
 print(ds.inverse_transform(ds.data))
 
 print(ds.inverse_transform(ds.deserialize(ds.serialize()).data))
+
+ds_like = ds.like(ds.preprocessor.transform(X.head(1)), y.iloc[0].tolist())
+print(ds_like.inverse_transform(ds_like.data))
