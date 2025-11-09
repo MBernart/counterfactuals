@@ -1,5 +1,5 @@
 import io
-from typing import Optional, List, Tuple, Any, Dict
+from typing import Optional, List, Tuple, Any, Dict, Optional
 import numpy as np
 import pandas as pd
 import pickle
@@ -21,6 +21,7 @@ class Dataset:
         categorical_values: Dict[str, List[Any]] = {},
         continuous_features: List[str] = [],
         allowable_ranges: Dict[str, Tuple[float, float]] = {},
+        preprocessor: Optional[ColumnTransformer] = None,
     ):
         self.df = df
         self.target: List[ClassLabel] = target.tolist() if isinstance(target, np.ndarray) else target
@@ -38,26 +39,30 @@ class Dataset:
         self.continuous_features_ids  = [features.index(f) for f in continuous_features]
         self.immutable_features_ids   = [features.index(f) for f in immutable_features]
 
-        self.preprocessor = self.get_preprocessor()
-        self.data: np.ndarray = self.preprocessor.fit_transform(self.df)
+        if preprocessor is None:
+            self.preprocessor = self.get_preprocessor()
+            self.data: np.ndarray = self.preprocessor.fit_transform(self.df)
+        else:
+            self.preprocessor = preprocessor
+            self.data: np.ndarray = self.preprocessor.transform(self.df)
 
     def get_preprocessor(self) -> ColumnTransformer:
         """
         Creates a ColumnTransformer with pipelines for numerical and
         categorical features.
         """
-        self._numerical_transformer = Pipeline(steps=[
+        num_transformer = Pipeline(steps=[
             ('scaler', StandardScaler())
         ])
 
-        self._categorical_transformer = Pipeline(steps=[
+        cat_transformer = Pipeline(steps=[
             ('onehot', OneHotEncoder(handle_unknown='error', sparse_output=False))
         ])
 
         return ColumnTransformer(
             transformers=[
-                ('num', self._numerical_transformer, self.continuous_features),
-                ('cat', self._categorical_transformer, self.categorical_features)
+                ('num', num_transformer, self.continuous_features),
+                ('cat', cat_transformer, self.categorical_features)
             ],
             remainder='drop'
         )
@@ -123,18 +128,17 @@ class Dataset:
             raise TypeError("Invalid argument type.")
         return self.like(data, target)
 
-    def like(self, data: np.ndarray, target: Optional[np.ndarray] = None) -> "Dataset":
-        if target is None:
-            target = self.target
-        # TODO: refactor __class__ call
-        return self.__class__(
-            data,
+    def like(self, data: np.ndarray, target: np.ndarray) -> "Dataset":
+        return Dataset(
+            self.inverse_transform(data),
             target,
             self.features,
-            self.categorical_features,
-            self.continuous_features,
-            self.immutable_features,
-            self.allowable_ranges,
+            immutable_features=self.immutable_features,
+            categorical_features=self.categorical_features,
+            categorical_values=self.categorical_values,
+            continuous_features=self.continuous_features,
+            allowable_ranges=self.allowable_ranges,
+            preprocessor=self.preprocessor
         )
     
     @staticmethod
