@@ -1,5 +1,5 @@
 import io
-from typing import Optional, List, Tuple, Any, Dict, Optional
+from typing import List, Tuple, Any, Dict, Union
 import numpy as np
 import pandas as pd
 import pickle
@@ -14,14 +14,14 @@ class Dataset:
     def __init__(
         self,
         df: pd.DataFrame,
-        target: List[ClassLabel] | np.ndarray,
+        target: Union[List[ClassLabel], np.ndarray],
         features: List[str],
         immutable_features: List[str] = [],
         categorical_features: List[str] = [],
         categorical_values: Dict[str, List[Any]] = {},
         continuous_features: List[str] = [],
         allowable_ranges: Dict[str, Tuple[float, float]] = {},
-        preprocessor: Optional[ColumnTransformer] = None,
+        preprocessor: Union[ColumnTransformer, None] = None,
     ):
         self.df = df
         self.target: List[ClassLabel] = target.tolist() if isinstance(target, np.ndarray) else target
@@ -31,9 +31,11 @@ class Dataset:
 
         self.categorical_features = categorical_features
         self.categorical_values   = categorical_values
+        self._fill_categorical_values()
 
         self.continuous_features  = continuous_features
         self.allowable_ranges     = allowable_ranges
+        self._fill_allowable_ranges()
 
         self.categorical_features_ids = [features.index(f) for f in categorical_features]
         self.continuous_features_ids  = [features.index(f) for f in continuous_features]
@@ -45,6 +47,17 @@ class Dataset:
         else:
             self.preprocessor = preprocessor
             self.data: np.ndarray = self.preprocessor.transform(self.df)
+
+    def _fill_categorical_values(self):
+        for feat in self.categorical_features:
+            if feat not in self.categorical_values:
+                self.categorical_values[feat] = np.unique(self.df[feat].values).tolist()
+
+    def _fill_allowable_ranges(self):
+        for feat in self.continuous_features:
+            if feat not in self.allowable_ranges:
+                values = self.df[feat].values
+                self.allowable_ranges[feat] = (values.min(), values.max())
 
     def get_preprocessor(self) -> ColumnTransformer:
         """
