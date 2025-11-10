@@ -116,7 +116,7 @@ def create_counterfactual(
             ]
         else:
             y_predict = model.predict(
-                Dataset(x_counterfact.reshape(1, -1), [], [], [], [], [], [])
+                x_counterfact.reshape(1, -1)
             )[0]
 
         diff = lammbda * (y_predict - y_to_be_annealed_to) ** 2
@@ -209,8 +209,7 @@ class WachterExplainer(Explainer):
                 random_seed=self.random_seed,
             )
 
-            cf_ds = instance_ds.like(counterfactual_data.reshape(1, -1))
-            predicted_class = model.predict(cf_ds)[0]
+            predicted_class = model.predict(counterfactual_data.reshape(1, -1))[0]
 
             if predicted_class != target_class:
                 raise ValueError(

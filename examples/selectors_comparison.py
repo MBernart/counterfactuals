@@ -24,18 +24,14 @@ data["species"] = iris.target
 label_encoder = LabelEncoder()
 data["species"] = label_encoder.fit_transform(data["species"])
 
-X = data.drop("species", axis=1).values
+X = data.drop("species", axis=1)
 y = data["species"].values
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-data = Dataset(X_test, y_test, iris.feature_names, [], iris.feature_names, [], [])
+data = Dataset(X_test, y_test, continuous_features=iris.feature_names)
 
 # Loading the pretrained model
 with open("temp_model.pt", "rb") as f:
@@ -57,7 +53,7 @@ print(f"Ensemble fitting complete")
 
 all_cfs = ensemble.explain(data[:5])
 print("All cfs")
-print_cfs(all_cfs, data.features, data[:5], explainers, model, scaler.inverse_transform, label_encoder.inverse_transform)
+print_cfs(all_cfs, data.features, data[:5], explainers, model, data.inverse_transform, label_encoder.inverse_transform)
 
 for selector in [Pareto(), IdealPoint(), BalancedPoint(), TOPSIS(), DensityBased()]:
     if isinstance(selector, ScoreBasedAggregator):
@@ -69,4 +65,4 @@ for selector in [Pareto(), IdealPoint(), BalancedPoint(), TOPSIS(), DensityBased
         all_selected_cfs.extend(selected_cfs)
 
     print(selector)
-    print_cfs(all_selected_cfs, data.features, data[:5], explainers, model, scaler.inverse_transform, label_encoder.inverse_transform)
+    print_cfs(all_selected_cfs, data.features, data[:5], explainers, model, data.inverse_transform, label_encoder.inverse_transform)
