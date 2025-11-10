@@ -1,4 +1,3 @@
-# extra requirement: pip install ucimlrepo
 from ucimlrepo import fetch_ucirepo 
 from explainers_lib.datasets import Dataset
 
