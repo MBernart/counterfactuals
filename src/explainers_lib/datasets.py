@@ -68,8 +68,9 @@ class Dataset:
             ('scaler', StandardScaler())
         ])
 
+        categories = [self.categorical_values[feat] for feat in self.categorical_features]
         cat_transformer = Pipeline(steps=[
-            ('onehot', OneHotEncoder(handle_unknown='error', sparse_output=False))
+            ('onehot', OneHotEncoder(categories=categories, handle_unknown='error', sparse_output=False))
         ])
 
         return ColumnTransformer(
