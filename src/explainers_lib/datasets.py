@@ -178,6 +178,7 @@ class Dataset:
                 "categorical_values": self.categorical_values,
                 "continuous_features": self.continuous_features,
                 "allowable_ranges": self.allowable_ranges,
+                "preprocessor": self.preprocessor,
             },
             protocol=4
         )
@@ -194,4 +195,5 @@ class Dataset:
             categorical_values=obj["categorical_values"],
             continuous_features=obj["continuous_features"],
             allowable_ranges=obj["allowable_ranges"],
+            preprocessor=obj["preprocessor"]
         )
