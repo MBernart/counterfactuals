@@ -60,10 +60,8 @@ class GrowingSpheresExplainer(Explainer):
             directions = directions / np.linalg.norm(directions, axis=1, keepdims=True) # unlikely for a random vector to have no length
             candidates = instance + directions * radius
 
-            candidates_ds = instance_ds.like(candidates)
-
             # Get predictions for all candidates
-            pred_classes = model.predict(candidates_ds)
+            pred_classes = model.predict(candidates)
 
             for i, pred_class in enumerate(pred_classes):
                 if pred_class == target_class:

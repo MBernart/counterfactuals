@@ -35,7 +35,6 @@ from explainers_lib.model import TorchModel
 from sklearn.datasets import load_iris
 import pandas as pd
 from sklearn.calibration import LabelEncoder
-from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import train_test_split
 
 # Dataset preparation
@@ -47,18 +46,14 @@ data["species"] = iris.target
 label_encoder = LabelEncoder()
 data["species"] = label_encoder.fit_transform(data["species"])
 
-X = data.drop("species", axis=1).values
+X = data.drop("species", axis=1)
 y = data["species"].values
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-data = Dataset(X_test, y_test, iris.feature_names, [], iris.feature_names, [], [])
+data = Dataset(X_test, y_test, continuous_features=iris.feature_names)
 
 # Loading the pretrained model
 with open("temp_model.pt", "rb") as f:
@@ -80,6 +75,6 @@ print(f"Ensemble fitting complete")
 
 cfs = ensemble.explain(data[:5],
                        pretty_print=True,
-                       pretty_print_postprocess=scaler.inverse_transform,
+                       pretty_print_postprocess=data.inverse_transform,
                        pretty_print_postprocess_target=label_encoder.inverse_transform)
 print(f"Number of generated cfs: {len(cfs)}")

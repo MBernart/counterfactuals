@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Any, Tuple
+from typing import List, Union, Tuple
 from .counterfactual import ClassLabel
 from .datasets import Dataset
 import pandas as pd
@@ -19,7 +19,7 @@ class Model:
         pass
         # raise NotImplementedError
 
-    def predict(self, data: Dataset) -> List[ClassLabel]:
+    def predict(self, data: Union[Dataset, np.ndarray]) -> List[ClassLabel]:
         """This method is used predict the class of instances"""
         pass
         # raise NotImplementedError
@@ -82,7 +82,8 @@ class TFModel(Model):
 
     # The predict function outputs
     # the continuous prediction of the model
-    def predict(self, x):
+    def predict(self, x: Union[Dataset, np.ndarray]):
+        x = x.data if isinstance(x, Dataset) else x
         x = self._prepare_input(x)
         return self._mymodel.predict(x)
     
@@ -138,9 +139,10 @@ class TorchModel(Model):
     def fit(self, data: Dataset) -> None:
         raise NotImplementedError
 
-    def predict(self, data: Dataset) -> List[ClassLabel]:
+    def predict(self, data: Union[Dataset, np.ndarray]) -> List[ClassLabel]:
+        data = data.data if isinstance(data, Dataset) else data
         labels = []
-        for instance in data.data:
+        for instance in data:
             # Convert the instance to a PyTorch Tensor
             instance_tensor = self._torch.tensor(instance, dtype=self._torch.float32)
 
@@ -203,7 +205,8 @@ class SklearnModel(Model):
     def fit(self, X, y):
         self._model.fit(X, y)
 
-    def predict(self, X):
+    def predict(self, X: Union[Dataset, np.ndarray]):
+        X = X.data if isinstance(X, Dataset) else X
         return self._model.predict(X)
 
     def predict_proba(self, X):

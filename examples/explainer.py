@@ -33,18 +33,14 @@ data["species"] = iris.target
 label_encoder = LabelEncoder()
 data["species"] = label_encoder.fit_transform(data["species"])
 
-X = data.drop("species", axis=1).values
+X = data.drop("species", axis=1)
 y = data["species"].values
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-data = Dataset(X_test, y_test, iris.feature_names, [], iris.feature_names, [], [])
+data = Dataset(X_test, y_test, continuous_features=iris.feature_names)
 
 # Loading the pretrained model
 with open("temp_model.pt", "rb") as f:
@@ -57,6 +53,6 @@ explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
 
 # Data postprocessing
-cfs = postprocess_cfs(cfs, scaler.inverse_transform, label_encoder.inverse_transform)
+cfs = postprocess_cfs(cfs, data.inverse_transform, label_encoder.inverse_transform)
 
 print_cfs(cfs, feature_names=data.features)

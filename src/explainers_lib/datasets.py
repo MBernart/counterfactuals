@@ -121,7 +121,8 @@ class Dataset:
 
         categories = [self.categorical_values[feat] for feat in self.categorical_features]
         cat_transformer = Pipeline(steps=[
-            ('onehot', OneHotEncoder(categories=categories, handle_unknown='error', sparse_output=False))
+            # TODO: maybe try to set spare=False in python 3.7 and otherwise set sparse_output=False
+            ('onehot', OneHotEncoder(categories=categories, handle_unknown='error'))#, sparse_output=False))
         ])
 
         return ColumnTransformer(
@@ -138,21 +139,31 @@ class Dataset:
         in the original feature space.
         """
         num_features_len = len(self.continuous_features)
+        cat_features_len = len(self.categorical_features)
 
         data_num = data[:, :num_features_len]
         data_cat = data[:, num_features_len:]
 
         try:
-            inv_data_num = self.preprocessor.named_transformers_['num'].inverse_transform(data_num)
-            inv_data_cat = self.preprocessor.named_transformers_['cat'].inverse_transform(data_cat)
+            inv_data_num = self.preprocessor.named_transformers_['num'].inverse_transform(data_num) \
+                if num_features_len > 0 else None
+            inv_data_cat = self.preprocessor.named_transformers_['cat'].inverse_transform(data_cat) \
+                if cat_features_len > 0 else None
         except Exception as e:
             print(f"Error during inverse transform: {e}")
             print("Ensure the input data shape matches the preprocessor's output.")
-            print(f"Expected num features: {num_features_len}, cat features: {len(self.categorical_features)}")
+            print(f"Expected num features: {num_features_len}, cat features: {cat_features_len}")
             print(f"Received data shape: {data.shape}")
             raise
 
-        inv_data_full = np.hstack((inv_data_num, inv_data_cat))
+        if inv_data_num is not None and inv_data_cat is not None:
+            inv_data_full = np.hstack((inv_data_num, inv_data_cat))
+        elif inv_data_num is not None:
+            inv_data_full = inv_data_num
+        elif inv_data_cat is not None:
+            inv_data_full = inv_data_cat
+        else:
+            assert False, "Unreachable: Both inv_data_num and inv_data_cat are None."
 
         column_names = self.continuous_features + self.categorical_features
         df_reconstructed = pd.DataFrame(inv_data_full, columns=column_names)

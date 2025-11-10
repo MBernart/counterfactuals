@@ -120,7 +120,7 @@ def postprocess_cfs(cfs: List[Counterfactual],
     postprocessed_cfs = list()
 
     for cf in cfs:
-        data = postprocess([cf.original_data, cf.data])
+        data = postprocess(np.array([cf.original_data, cf.data])).values
         targets = postprocess_target([cf.original_class, cf.target_class])
 
         postprocessed_cfs.append(Counterfactual(*data, *targets, cf.explainer))
@@ -164,10 +164,10 @@ def print_cfs(
             first_section = False
 
         original_data = cfs[0].original_data if len(cfs) > 0 else np.frombuffer(bytes)
-        original_class = cfs[0].original_class if len(cfs) > 0 else model.predict(data.like(np.array([original_data])))[0] if model else None
-        original_class = postprocess_target([original_class])[0] if postprocess_target else original_class
+        original_class = cfs[0].original_class if len(cfs) > 0 else model.predict(np.array([original_data]))[0] if model else None
+        original_class = postprocess_target(np.array([original_class]))[0] if postprocess_target else original_class
         original_class = repr(int(original_class)) if original_class is not None else "N/A" 
-        original_data = postprocess([original_data])[0] if postprocess else original_data
+        original_data = postprocess(np.array([original_data])).iloc[0] if postprocess else original_data
         original_data = original_data.tolist()
 
         table.add_row(*map(lambda x: "{:.4f}".format(x) if isinstance(x, (int, float)) else str(x), original_data), original_class, "original data")
@@ -182,9 +182,9 @@ def print_cfs(
         for explainer, cfs in sorted(by_explainer.items(), key=lambda items: items[0]):
             if len(cfs) > 0:
                 for cf in cfs:
-                    cf_data = postprocess([cf.data])[0] if postprocess else cf.data
+                    cf_data = postprocess(np.array([cf.data])).iloc[0] if postprocess else cf.data
                     cf_data = cf_data.tolist()
-                    cf_target = postprocess_target([cf.target_class])[0] if postprocess_target else cf.target_class
+                    cf_target = postprocess_target(np.array([cf.target_class]))[0] if postprocess_target else cf.target_class
                     cf_target = repr(int(cf_target))
                     table.add_row(*map(lambda x: "{:.4f}".format(x) if isinstance(x, (int, float)) else str(x), cf_data), cf_target, cf.explainer)
             else:
