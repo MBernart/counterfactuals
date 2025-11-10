@@ -15,7 +15,7 @@ class Dataset:
         self,
         df: pd.DataFrame,
         target: Union[List[ClassLabel], np.ndarray],
-        features: List[str],
+        features: Union[List[str], None] = None,
         immutable_features: List[str] = [],
         categorical_features: List[str] = [],
         categorical_values: Dict[str, List[Any]] = {},
@@ -31,15 +31,17 @@ class Dataset:
 
         self.categorical_features = categorical_features
         self.categorical_values   = categorical_values
-        self._fill_categorical_values()
 
         self.continuous_features  = continuous_features
         self.allowable_ranges     = allowable_ranges
+
+        self._ensure_features()
+        self._fill_categorical_values()
         self._fill_allowable_ranges()
 
-        self.categorical_features_ids = [features.index(f) for f in categorical_features]
-        self.continuous_features_ids  = [features.index(f) for f in continuous_features]
-        self.immutable_features_ids   = [features.index(f) for f in immutable_features]
+        self.categorical_features_ids = [self.features.index(f) for f in self.categorical_features]
+        self.continuous_features_ids  = [self.features.index(f) for f in self.continuous_features]
+        self.immutable_features_ids   = [self.features.index(f) for f in self.immutable_features]
 
         if preprocessor is None:
             self.preprocessor = self.get_preprocessor()
@@ -48,12 +50,61 @@ class Dataset:
             self.preprocessor = preprocessor
             self.data: np.ndarray = self.preprocessor.transform(self.df)
 
+    def _ensure_features(self):
+        cat_features = set(self.categorical_features)
+        num_features = set(self.continuous_features)
+        immutable_features = set(self.immutable_features)
+        all_processing_features = cat_features.union(num_features)
+        overlapping_cat_num = cat_features.intersection(num_features)
+
+        if self.features is None:
+            all_features = all_processing_features
+            self.features = list(all_features)
+        else:
+            all_features = set(self.features)
+
+        assert all_features != set(), (
+            "No features were defined. Please provide 'features' or "
+            "at least one of 'categorical_features' or 'continuous_features'."
+        )
+
+        assert overlapping_cat_num == set(), (
+            f"Features cannot be both categorical and continuous: {overlapping_cat_num}"
+        )
+
+        assert all_processing_features == all_features, (
+            "The union of categorical and continuous features does not match the "
+            f"complete feature list. Missing: {all_features - all_processing_features}. "
+            f"Extra: {all_processing_features - all_features}"
+        )
+
+        assert immutable_features.issubset(all_features), (
+            "Immutable features must be a subset of all features. "
+            f"Unknown immutable features: {immutable_features - all_features}"
+        )
+
     def _fill_categorical_values(self):
+        cat_features_set = set(self.categorical_features)
+        defined_cat_keys = set(self.categorical_values.keys())
+
+        assert defined_cat_keys.issubset(cat_features_set), (
+            f"Keys in 'categorical_values' must be a subset of 'categorical_features'. "
+            f"Invalid keys found: {defined_cat_keys - cat_features_set}"
+        )
+
         for feat in self.categorical_features:
             if feat not in self.categorical_values:
                 self.categorical_values[feat] = np.unique(self.df[feat].values).tolist()
 
     def _fill_allowable_ranges(self):
+        cont_features_set = set(self.continuous_features)
+        defined_range_keys = set(self.allowable_ranges.keys())
+
+        assert defined_range_keys.issubset(cont_features_set), (
+            f"Keys in 'allowable_ranges' must be a subset of 'continuous_features'. "
+            f"Invalid keys found: {defined_range_keys - cont_features_set}"
+        )
+
         for feat in self.continuous_features:
             if feat not in self.allowable_ranges:
                 values = self.df[feat].values
