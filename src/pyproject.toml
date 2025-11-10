@@ -14,7 +14,8 @@ dependencies = [
    "redis==4.5.5",
    "rich",
    "scikit-learn",
-   "pyarrow"
+   "pyarrow",
+   "skops"
 ]
 dynamic = ["version"]
 authors = [

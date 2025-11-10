@@ -7,6 +7,7 @@ from .counterfactual import ClassLabel
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+import skops.io as sio
 
 class Dataset:
     """This is a helper class"""
@@ -108,7 +109,7 @@ class Dataset:
         for feat in self.continuous_features:
             if feat not in self.allowable_ranges:
                 values = self.df[feat].values
-                self.allowable_ranges[feat] = (values.min(), values.max())
+                self.allowable_ranges[feat] = (float(values.min()), float(values.max()))
 
     def get_preprocessor(self) -> ColumnTransformer:
         """
@@ -241,7 +242,7 @@ class Dataset:
                 "categorical_values": self.categorical_values,
                 "continuous_features": self.continuous_features,
                 "allowable_ranges": self.allowable_ranges,
-                "preprocessor": self.preprocessor,
+                "preprocessor": sio.dumps(self.preprocessor),
             },
             protocol=4
         )
@@ -258,5 +259,12 @@ class Dataset:
             categorical_values=obj["categorical_values"],
             continuous_features=obj["continuous_features"],
             allowable_ranges=obj["allowable_ranges"],
-            preprocessor=obj["preprocessor"]
+            preprocessor=sio.loads(obj["preprocessor"], trusted=[
+                'numpy.float64',
+                'numpy.int64',
+                'sklearn.compose._column_transformer.ColumnTransformer',
+                'sklearn.pipeline.Pipeline',
+                'sklearn.preprocessing._data.StandardScaler',
+                'sklearn.preprocessing._encoders.OneHotEncoder'
+            ])
         )

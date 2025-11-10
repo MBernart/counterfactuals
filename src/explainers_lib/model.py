@@ -6,6 +6,7 @@ import pandas as pd
 import tempfile
 import os
 import pickle
+import skops.io as sio
 
 
 class Model:
@@ -213,10 +214,10 @@ class SklearnModel(Model):
         return self._model.predict_proba(X)
 
     def serialize(self) -> Tuple[bytes, str]:
-        model_bytes = pickle.dumps(self._model, protocol=4)
+        model_bytes = pickle.dumps(sio.dumps(self._model), protocol=4)
         return model_bytes, "sklearn"
 
     @staticmethod
     def deserialize(data: bytes) -> "SklearnModel":
-        model = pickle.loads(data)
+        model = sio.loads(pickle.loads(data)) # TODO: probably requires setting trusted=[...]
         return SklearnModel(model)
