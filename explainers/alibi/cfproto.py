@@ -15,20 +15,78 @@ print('Eager execution enabled: ', tf.executing_eagerly()) # False
 from explainers_lib.explainers.celery_remote import app, create_celery_tasks
 from explainers_lib import Explainer, Dataset, Model, Counterfactual
 
+# note: This explainer does not support immutable features
 class CFProto(Explainer):
     def fit(self, model: Model, data: Dataset) -> None:
+        num_transformer = data.preprocessor.named_transformers_['num']
+        cat_transformer = data.preprocessor.named_transformers_['cat']
+        onehot_encoder = cat_transformer.named_steps['onehot']
+
+        if data.continuous_features:
+            mins_orig = [data.allowable_ranges[feat][0] for feat in data.continuous_features]
+            maxs_orig = [data.allowable_ranges[feat][1] for feat in data.continuous_features]
+            
+            scaled_ranges = num_transformer.transform(np.array([mins_orig, maxs_orig]))
+            scaled_mins_num = scaled_ranges[0]
+            scaled_maxs_num = scaled_ranges[1]
+        else:
+            scaled_mins_num = np.array([])
+            scaled_maxs_num = np.array([])
+
+        cat_vars_dict = {}
+        if data.categorical_features:
+            is_ohe = True
+            categories_list = onehot_encoder.categories_
+            
+            current_index = len(scaled_mins_num) 
+            
+            all_cat_mins = []
+            all_cat_maxs = []
+
+            for categories in categories_list:
+                num_categories = len(categories)
+                
+                if onehot_encoder.drop == 'if_binary' and num_categories == 2:
+                    n_output_cols = 1
+                elif onehot_encoder.drop == 'first' and num_categories > 0:
+                    n_output_cols = num_categories - 1
+                else: # Includes 'drop=None'
+                    n_output_cols = num_categories
+
+                cat_vars_dict[current_index] = num_categories
+                
+                all_cat_mins.append(0)
+                all_cat_maxs.append(1)
+                
+                current_index += n_output_cols
+
+            scaled_mins_cat = np.array(all_cat_mins)
+            scaled_maxs_cat = np.array(all_cat_maxs)
+
+        else:
+            is_ohe = False
+            scaled_mins_cat = np.array([])
+            scaled_maxs_cat = np.array([])
+
+        feature_range_mins = np.concatenate([scaled_mins_num, scaled_mins_cat])
+        feature_range_maxs = np.concatenate([scaled_maxs_num, scaled_maxs_cat])
+        
+        feature_range_mins = feature_range_mins.reshape(1, -1)
+        feature_range_maxs = feature_range_maxs.reshape(1, -1)
+
         shape = (1,) + data.data.shape[1:]
         self.cf = CounterfactualProto(
             lambda x: model.predict_proba(x),
             shape,
             kappa=0.,
-            beta=.1,
+            beta=.1, # Increase to heavily penalize changes.
             gamma=100.,
             theta=100.,
-            #  ae_model=ae, # TODO: figure out how to use autoencoders and categorical data
-            #  enc_model=enc,
             max_iterations=500,
-            feature_range=(-.5, .5), # TODO: take this from the dataset
+            feature_range=(feature_range_mins, feature_range_maxs),
+            cat_vars=cat_vars_dict,
+            ohe=is_ohe,
+            use_kdtree=True,
             c_init=1.,
             c_steps=5,
             learning_rate_init=1e-2,
