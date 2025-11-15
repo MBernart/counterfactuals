@@ -64,9 +64,19 @@ model = TorchModel.deserialize(model_data)
 # Ensemble
 ensemble = Ensemble(
     model,
-    [WachterExplainer(), GrowingSpheresExplainer(),                   # Local explainers
-     ActionableRecourseExplainer(), DiceExplainer(), FaceExplainer(), # Carla explainers
-     AlibiCFProto(), AlibiCFRL()],                                    # Alibi explainers
+    [
+        # Native
+        WachterExplainer(),
+        GrowingSpheresExplainer(),
+        FaceExplainer(),
+        # Carla
+        ActionableRecourseExplainer(),
+        # Dice
+        DiceExplainer(),
+        # Alibi
+        AlibiCFProto(),
+        AlibiCFRL()
+    ],
     Pareto())
 print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
 

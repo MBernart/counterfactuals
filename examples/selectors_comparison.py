@@ -42,9 +42,19 @@ model = TorchModel.deserialize(model_data)
 # Ensemble
 ensemble = Ensemble(
     model,
-    [WachterExplainer(), GrowingSpheresExplainer(),                   # Local explainers
-     ActionableRecourseExplainer(), DiceExplainer(), FaceExplainer(), # Carla explainers
-     AlibiCFProto(), AlibiCFRL()])                                    # Alibi explainers
+    [
+        # Native
+        WachterExplainer(),
+        GrowingSpheresExplainer(),
+        FaceExplainer(),
+        # Carla
+        ActionableRecourseExplainer(),
+        # Dice
+        DiceExplainer(),
+        # Alibi
+        AlibiCFProto(),
+        AlibiCFRL()
+    ])
 explainers = ensemble.get_explainers_repr()
 print(f"Used explainers: {[explainer for explainer in explainers]}")
 
