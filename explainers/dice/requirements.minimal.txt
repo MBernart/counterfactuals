@@ -1,0 +1,7 @@
+scikit-learn>=1.0.0
+scipy>=1.0.0
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.7.0+cpu
+
+dice-ml==0.12

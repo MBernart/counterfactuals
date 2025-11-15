@@ -3,4 +3,4 @@ from explainers_lib.explainers.celery_remote import app, create_celery_tasks
 
 explainer = FaceExplainer()
 
-create_celery_tasks(explainer, 'carla_face')
+create_celery_tasks(explainer, 'face')

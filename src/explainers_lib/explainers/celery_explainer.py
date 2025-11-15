@@ -78,6 +78,7 @@ class CeleryExplainer(Explainer):
 
         return group([set_dataset_sig, set_model_sig]) | explain_sig
 
+# Native explainers
 class WachterExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("wachter")
@@ -86,18 +87,19 @@ class GrowingSpheresExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("growing_spheres")
 
+class FaceExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("face")
+
+# Dice explainer
+class DiceExplainer(CeleryExplainer):
+    def __init__(self):
+        super().__init__("dice")
+
 # Carla explainers
 class ActionableRecourseExplainer(CeleryExplainer):
     def __init__(self):
         super().__init__("carla_actionable_recourse")
-
-class DiceExplainer(CeleryExplainer):
-    def __init__(self):
-        super().__init__("carla_dice")
-
-class FaceExplainer(CeleryExplainer):
-    def __init__(self):
-        super().__init__("carla_face")
 
 # Alibi Explain
 class AlibiCFProto(CeleryExplainer):
