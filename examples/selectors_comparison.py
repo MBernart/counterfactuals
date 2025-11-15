@@ -1,5 +1,5 @@
-from explainers_lib.explainers.wachter import WachterExplainer
-from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
+from explainers_lib.explainers.native.wachter import WachterExplainer
+from explainers_lib.explainers.native.growing_spheres import GrowingSpheresExplainer
 from explainers_lib.explainers.celery_explainer import ActionableRecourseExplainer
 from explainers_lib.explainers.celery_explainer import FaceExplainer
 from explainers_lib.explainers.celery_explainer import DiceExplainer

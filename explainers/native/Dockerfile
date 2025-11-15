@@ -10,7 +10,7 @@ RUN pip install --upgrade pip
 COPY ./src ./src
 RUN pip install --user --no-cache-dir -e ./src
 
-COPY ./explainers/wachter/requirements.minimal.txt ./requirements.txt
+COPY ./explainers/native/requirements.minimal.txt ./requirements.txt
 RUN pip install --user --no-cache-dir -r ./requirements.txt
 
 FROM python:3.13-slim
@@ -25,7 +25,9 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./explainers/wachter/main.py ./explainers/wachter/main.py
+COPY ./explainers/native/growing_spheres.py ./explainers/native/growing_spheres.py
+COPY ./explainers/native/wachter.py ./explainers/native/wachter.py
+COPY ./explainers/native/dispatch.sh ./dispatch.sh
 
 USER app
 
@@ -33,4 +35,5 @@ ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 
-CMD ["celery", "-A", "explainers.wachter.main", "worker", "-l", "info", "-n", "wachter_worker@%h", "-Q", "wachter,celery"]
+ENTRYPOINT ["./dispatch.sh"]
+CMD ["help"]
