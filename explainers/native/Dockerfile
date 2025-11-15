@@ -27,6 +27,7 @@ COPY --from=builder /root/.local /home/app/.local
 COPY ./src ./src
 COPY ./explainers/native/growing_spheres.py ./explainers/native/growing_spheres.py
 COPY ./explainers/native/wachter.py ./explainers/native/wachter.py
+COPY ./explainers/native/face.py ./explainers/native/face.py
 COPY ./explainers/native/dispatch.sh ./dispatch.sh
 
 USER app
