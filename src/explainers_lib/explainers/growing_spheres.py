@@ -22,7 +22,7 @@ class GrowingSpheresExplainer(Explainer):
         # No fitting needed for Growing Spheres
         pass
 
-    def explain(self, model: Model, data: Dataset) -> list[Counterfactual]:
+    def explain(self, model: Model, data: Dataset, desired_class: int = None) -> list[Counterfactual]:
         counterfactuals: list[Counterfactual] = []
 
         # Assuming data is an iterable, for each instance
@@ -30,15 +30,18 @@ class GrowingSpheresExplainer(Explainer):
 
             original_class = model.predict(instance)[0]
 
+            t_range = range(10) if desired_class is None else [desired_class]
+
             # Try to find a counterfactual for a different class
-            for target_class in range(len(set(data.target))):
+            for target_class in t_range:
                 if target_class == original_class:
                     continue
 
                 try:
                     cf = self._generate_counterfactual(instance, model, target_class, original_class)
                     counterfactuals.append(cf)
-                    break  # Stop after finding the first valid CF
+                    continue
+                    # break  # Stop after finding the first valid CF
                 except ValueError:
                     continue  # Try next target class
 
