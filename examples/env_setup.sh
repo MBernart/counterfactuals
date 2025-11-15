@@ -19,4 +19,4 @@ docker run --rm -d --network host --name counterfactuals-alibi-cfrl cfe.cs.put.p
 
 docker run --rm -d --network host --name counterfactuals-carla-actionable_recourse cfe.cs.put.poznan.pl/counterfactuals-carla actionable_recourse
 
-docker run --rm -d --network host --name counterfactuals-dice cfe.cs.put.poznan.pl/counterfactuals-dice dice
+docker run --rm -d --network host --name counterfactuals-dice cfe.cs.put.poznan.pl/counterfactuals-dice

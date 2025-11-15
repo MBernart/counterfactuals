@@ -5,3 +5,5 @@ scipy>=1.0.0
 torch==2.7.0+cpu
 
 dice-ml==0.12
+
+importlib_metadata<5.0.0
