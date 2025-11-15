@@ -10,8 +10,7 @@ on:
         type: choice
         options:
         - all
-        - growing_spheres
-        - wachter
+        - native
         - carla
         - alibi
       tag:
@@ -35,7 +34,7 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ github.event.inputs.explainer }}" = "all" ]; then
-            echo 'matrix=["growing_spheres","wachter","carla","alibi"]' >> $GITHUB_OUTPUT
+            echo 'matrix=["native","carla","alibi"]' >> $GITHUB_OUTPUT
           else
             echo "matrix=[\"${{ github.event.inputs.explainer }}\"]" >> $GITHUB_OUTPUT
           fi
