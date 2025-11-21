@@ -39,47 +39,54 @@ class DiceExplainer(Explainer):
         self.method = method
         self.posthoc_sparsity_param = posthoc_sparsity_param
         self.dice = None
-        self.data = None
-        self.model = None
+        self.data_interface = None
         self.feature_names = None
+        self.preprocessor = None 
+        self.feature_dtypes = None
 
     def __repr__(self):
         return f"dice_explainer(num_cfs={self.num_cfs}, method='{self.method}')"
 
     def fit(self, model: Model, data: Dataset):
         """
-        Prepare DiCE with given model and dataset.
+        Prepare DiCE with given model and dataset. 
+        Uses the RAW dataframe so DiCE can handle categoricals correctly.
         """
-        # Convert dataset to dataframe for DiCE
-        df = pd.DataFrame(data.data, columns=data.features)
-        df["target"] = data.target
+        df = data.df.copy()
+        target_col = "target"
+        df[target_col] = data.target
 
-        # Build DiCE data + model
-        self.data = dice_ml.Data(
+        self.feature_dtypes = data.df[data.features].dtypes
+
+        self.data_interface = dice_ml.Data(
             dataframe=df,
             continuous_features=data.continuous_features,
-            outcome_name="target",
+            outcome_name=target_col,
         )
 
-        # Wrap the CARLA model
-        backend = "PYT" if hasattr(model, "_torch") else "sklearn"
-        self.model = dice_ml.Model(model=model._model, backend=backend)
-
-        # Initialize DiCE explainer
-        self.dice = dice_ml.Dice(self.data, self.model, method=self.method)
+        self.preprocessor = data.preprocessor
         self.feature_names = data.features
+
+        model_wrapper = _ModelPipelineWrapper(model, data.preprocessor, self.feature_dtypes)
+        self.model = dice_ml.Model(model=model_wrapper, backend="sklearn")
+
+        self.dice = dice_ml.Dice(self.data_interface, self.model, method=self.method)
 
     def explain(self, model: Model, data: Dataset, y_desired: Optional[int] = None) -> List[Counterfactual]:
         """
         Generate counterfactuals for multiple instances.
         """
         counterfactuals = []
-        df = pd.DataFrame(data.data, columns=data.features)
         y_target = y_desired or self.desired_class or 1
+        
+        df_raw = data.df.reset_index(drop=True)
 
-        for i in tqdm(range(len(df)), unit="instance"):
-            instance_df = df.iloc[[i]]
-            cf = self._generate_cf(instance_df, model, y_target)
+        for i in tqdm(range(len(df_raw)), unit="instance"):
+            instance_df = df_raw.iloc[[i]]
+            
+            original_vector = data.data[i]
+            
+            cf = self._generate_cf(instance_df, original_vector, model, y_target)
             if cf is not None:
                 counterfactuals.append(cf)
 
@@ -91,11 +98,18 @@ class DiceExplainer(Explainer):
         """
         Generate counterfactual for a single instance.
         """
-        instance_df = pd.DataFrame(instance_ds.data, columns=self.feature_names)
+        instance_df = instance_ds.df.copy()
+        original_vector = instance_ds.data[0]
         target = target_class or self.desired_class or 1
-        return self._generate_cf(instance_df, model, target)
+        return self._generate_cf(instance_df, original_vector, model, target)
 
-    def _generate_cf(self, instance_df: pd.DataFrame, model: Model, target_class: int) -> Optional[Counterfactual]:
+    def _generate_cf(
+        self, 
+        instance_df: pd.DataFrame, 
+        original_vector: np.ndarray, 
+        model: Model, 
+        target_class: int
+    ) -> Optional[Counterfactual]:
         """
         Helper to generate a single counterfactual using DiCE.
         """
@@ -106,16 +120,24 @@ class DiceExplainer(Explainer):
                 desired_class=target_class,
                 posthoc_sparsity_param=self.posthoc_sparsity_param,
             )
+            
             df_cfs = dice_exp.cf_examples_list[0].final_cfs_df
 
             if not df_cfs.empty:
-                original = instance_df[self.feature_names].values[0]
-                candidate = df_cfs[self.feature_names].iloc[0].values
-                pred_orig = np.argmax(model.predict_proba(original.reshape(1, -1)))
-                pred_cf = np.argmax(model.predict_proba(candidate.reshape(1, -1)))
+                candidate_raw_df = df_cfs[self.feature_names].iloc[[0]].copy()
+                
+                for col, dtype in self.feature_dtypes.items():
+                    if col in candidate_raw_df.columns:
+                        candidate_raw_df[col] = candidate_raw_df[col].astype(dtype)
+
+                candidate_vector = self.preprocessor.transform(candidate_raw_df).flatten()
+                
+                pred_orig = np.argmax(model.predict_proba(original_vector.reshape(1, -1)))
+                pred_cf = np.argmax(model.predict_proba(candidate_vector.reshape(1, -1)))
+
                 return Counterfactual(
-                    original_data=original,
-                    data=candidate,
+                    original_data=original_vector,
+                    data=candidate_vector,
                     original_class=pred_orig,
                     target_class=pred_cf,
                     explainer=repr(self),
@@ -123,6 +145,43 @@ class DiceExplainer(Explainer):
 
         except Exception as e:
             print(f"[WARN] DiCE failed for instance: {e}")
-            return None
 
         return None
+
+class _ModelPipelineWrapper:
+    """
+    Internal helper to glue the Preprocessor and the Model together.
+    Enforces strict data types to prevent OHE errors.
+    """
+    def __init__(self, model_obj, preprocessor, feature_dtypes):
+        self.model = model_obj
+        self.preprocessor = preprocessor
+        self.feature_dtypes = feature_dtypes
+
+    def _ensure_dtypes(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        """
+        DiCE often converts data to pure strings or floats. 
+        We must cast them back to the training dtypes (e.g. int64) 
+        so the OneHotEncoder recognizes the categories.
+        """
+        df_fixed = dataframe.copy()
+        for col, dtype in self.feature_dtypes.items():
+            if col in df_fixed.columns:
+                try:
+                    df_fixed[col] = df_fixed[col].astype(dtype)
+                except ValueError:
+                    # Fallback: sometimes '1.0' (str) fails to cast directly to int
+                    # We try casting to float first, then int
+                    if np.issubdtype(dtype, np.integer):
+                         df_fixed[col] = pd.to_numeric(df_fixed[col]).astype(dtype)
+        return df_fixed
+
+    def predict_proba(self, dataframe):
+        df_typed = self._ensure_dtypes(dataframe)
+        X_transformed = self.preprocessor.transform(df_typed)
+        return self.model.predict_proba(X_transformed)
+
+    def predict(self, dataframe):
+        df_typed = self._ensure_dtypes(dataframe)
+        X_transformed = self.preprocessor.transform(df_typed)
+        return self.model.predict(X_transformed)
