@@ -1,6 +1,3 @@
-import pandas as pd
-from typing import Sequence
-
 import numpy as np
 from tqdm import tqdm
 from explainers_lib.counterfactual import Counterfactual
@@ -55,10 +52,56 @@ class GrowingSpheresExplainer(Explainer):
         instance = instance_ds.data[0]
         dim = instance.shape[0]
 
+        immutable_transformed_indices = []
+
+        continuous_immutable_indices = [
+            i
+            for i, f in enumerate(instance_ds.continuous_features)
+            if f in instance_ds.immutable_features
+        ]
+        immutable_transformed_indices.extend(continuous_immutable_indices)
+
+        if instance_ds.categorical_features:
+            ohe = instance_ds.preprocessor.named_transformers_["cat"].named_steps[
+                "onehot"
+            ]
+            cat_feature_names = instance_ds.categorical_features
+            cat_immutable_features = [
+                f for f in instance_ds.immutable_features if f in cat_feature_names
+            ]
+
+            if cat_immutable_features:
+                offset = len(instance_ds.continuous_features)
+                n_cats_per_feature = [len(cats) for cats in ohe.categories_]
+
+                cat_indices_start = np.cumsum([0] + n_cats_per_feature[:-1])
+
+                for f in cat_immutable_features:
+                    idx_in_cat_list = cat_feature_names.index(f)
+                    start = offset + cat_indices_start[idx_in_cat_list]
+                    end = start + n_cats_per_feature[idx_in_cat_list]
+                    immutable_transformed_indices.extend(range(start, end))
+
         while radius <= self.max_radius:
             directions = np.random.random((self.num_samples, dim))
-            directions = directions / np.linalg.norm(directions, axis=1, keepdims=True) # unlikely for a random vector to have no length
+            norm = np.linalg.norm(directions, axis=1, keepdims=True)
+            norm[norm == 0] = 1e-9
+            directions = directions / norm
             candidates = instance + directions * radius
+
+            if immutable_transformed_indices:
+                candidates[:, immutable_transformed_indices] = instance[
+                    immutable_transformed_indices
+                ]
+
+            if instance_ds.allowable_ranges:
+                df_candidates = instance_ds.inverse_transform(candidates)
+                for feature, (min_val, max_val) in instance_ds.allowable_ranges.items():
+                    if feature in df_candidates.columns:
+                        df_candidates[feature] = df_candidates[feature].clip(
+                            min_val, max_val
+                        )
+                candidates = instance_ds.preprocessor.transform(df_candidates)
 
             # Get predictions for all candidates
             pred_classes = model.predict(candidates)
