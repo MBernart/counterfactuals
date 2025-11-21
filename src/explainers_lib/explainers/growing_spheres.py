@@ -61,21 +61,25 @@ class GrowingSpheresExplainer(Explainer):
         ]
         immutable_transformed_indices.extend(continuous_immutable_indices)
 
+        cat_feature_slices = []
         if instance_ds.categorical_features:
             ohe = instance_ds.preprocessor.named_transformers_["cat"].named_steps[
                 "onehot"
             ]
+            n_cats_per_feature = [len(cats) for cats in ohe.categories_]
+            offset = len(instance_ds.continuous_features)
+            cat_indices_start = np.cumsum([0] + n_cats_per_feature[:-1])
+
+            for i, start in enumerate(cat_indices_start):
+                end = start + n_cats_per_feature[i]
+                cat_feature_slices.append(slice(offset + start, offset + end))
+
             cat_feature_names = instance_ds.categorical_features
             cat_immutable_features = [
                 f for f in instance_ds.immutable_features if f in cat_feature_names
             ]
 
             if cat_immutable_features:
-                offset = len(instance_ds.continuous_features)
-                n_cats_per_feature = [len(cats) for cats in ohe.categories_]
-
-                cat_indices_start = np.cumsum([0] + n_cats_per_feature[:-1])
-
                 for f in cat_immutable_features:
                     idx_in_cat_list = cat_feature_names.index(f)
                     start = offset + cat_indices_start[idx_in_cat_list]
@@ -88,6 +92,14 @@ class GrowingSpheresExplainer(Explainer):
             norm[norm == 0] = 1e-9
             directions = directions / norm
             candidates = instance + directions * radius
+
+            if cat_feature_slices:
+                for s in cat_feature_slices:
+                    cat_part = candidates[:, s]
+                    max_indices = np.argmax(cat_part, axis=1)
+                    new_cat_part = np.zeros_like(cat_part)
+                    new_cat_part[np.arange(len(new_cat_part)), max_indices] = 1
+                    candidates[:, s] = new_cat_part
 
             if immutable_transformed_indices:
                 candidates[:, immutable_transformed_indices] = instance[
