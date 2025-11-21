@@ -17,7 +17,28 @@ from explainers_lib import Explainer, Dataset, Model, Counterfactual
 
 # note: This explainer does not support immutable features
 class CFProto(Explainer):
+    def __init__(self):
+        self.cf = None
+        self.safe_k = 1 # Fallback
+
     def fit(self, model: Model, data: Dataset) -> None:
+        print(f"CFProto: Fitting on {len(data.data)} samples.")
+        
+        # CFProto builds KD-Trees based on y_pred, not y_true.
+        preds = model.predict_proba(data.data)
+        predicted_classes = np.argmax(preds, axis=1)
+        unique_preds, pred_counts = np.unique(predicted_classes, return_counts=True)
+        
+        if len(pred_counts) > 0:
+            min_pred_samples = np.min(pred_counts)
+        else:
+            min_pred_samples = 0
+
+        self.safe_k = int(max(1, min(20, min_pred_samples)))
+        
+        print(f"CFProto: Model prediction distribution: {dict(zip(unique_preds, pred_counts))}")
+        print(f"CFProto: Dynamic 'k' set to {self.safe_k} based on smallest predicted bucket.")
+
         num_transformer = data.preprocessor.named_transformers_['num']
         cat_transformer = data.preprocessor.named_transformers_['cat']
         onehot_encoder = cat_transformer.named_steps['onehot']
@@ -101,18 +122,30 @@ class CFProto(Explainer):
                 np.expand_dims(instance, axis=0),
                 Y=None,
                 target_class=None,
-                k=20,
+                k=self.safe_k, 
                 k_type='mean',
                 threshold=0.,
                 verbose=True,
                 print_every=100,
                 log_every=100)
+            
             if explanation.cf is not None:
+                orig_class_raw = explanation.orig_class
+                target_class_raw = explanation.cf["class"]
+                
+                if hasattr(orig_class_raw, 'item'): c_orig = orig_class_raw.item()
+                elif isinstance(orig_class_raw, np.ndarray): c_orig = int(orig_class_raw.flatten()[0])
+                else: c_orig = int(orig_class_raw)
+
+                if hasattr(target_class_raw, 'item'): c_target = target_class_raw.item()
+                elif isinstance(target_class_raw, np.ndarray): c_target = int(target_class_raw.flatten()[0])
+                else: c_target = int(target_class_raw)
+
                 cfs.append(Counterfactual(
                     instance,
                     explanation.cf["X"][0],
-                    explanation.orig_class,
-                    explanation.cf["class"],
+                    c_orig,
+                    c_target,
                     repr(self)
                 ))
         return cfs
