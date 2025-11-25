@@ -210,7 +210,8 @@ class Dataset:
 
     def like(self, data: np.ndarray, target: np.ndarray) -> "Dataset":
         return Dataset(
-            self.inverse_transform(data),
+            # self.inverse_transform(data),  # must implement Identity trasformation case handling for inverse function
+            pd.DataFrame(data, columns=self.features),
             target,
             self.features,
             immutable_features=self.immutable_features,
