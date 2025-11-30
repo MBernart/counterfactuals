@@ -6,164 +6,69 @@ from tqdm import tqdm
 from explainers_lib.counterfactual import Counterfactual
 from explainers_lib.datasets import Dataset
 from explainers_lib.explainers import Explainer
-from explainers_lib.model import Model
-
-# Sebastian Raschka 2014-2024
-# mlxtend Machine Learning Library Extensions
-#
-# Author: Sebastian Raschka <sebastianraschka.com>
-#
-# License: BSD 3 clause
-
-import warnings
-from explainers_lib.datasets import Dataset
-
-import numpy as np
+from explainers_lib.model import Model, TorchModel
 from scipy.optimize import minimize
-
-
-def create_counterfactual(
-    x_reference,
-    y_desired,
-    model,
-    X_dataset,
-    y_desired_proba=None,
-    lammbda=0.1,
-    random_seed=None,
-):
-    """
-    Implementation of the counterfactual method by Wachter et al. 2017
-
-    References:
-
-    - Wachter, S., Mittelstadt, B., & Russell, C. (2017).
-    Counterfactual explanations without opening the black box:
-     Automated decisions and the GDPR. Harv. JL & Tech., 31, 841.,
-     https://arxiv.org/abs/1711.00399
-
-    Parameters
-    ----------
-
-    x_reference : array-like, shape=[m_features]
-        The data instance (training example) to be explained.
-
-    y_desired : int
-        The desired class label for `x_reference`.
-
-    model : estimator
-        A (scikit-learn) estimator implementing `.predict()` and/or
-        `predict_proba()`.
-        - If `model` supports `predict_proba()`, then this is used by
-        default for the first loss term,
-        `(lambda * model.predict[_proba](x_counterfact) - y_desired[_proba])^2`
-        - Otherwise, method will fall back to `predict`.
-
-    X_dataset : array-like, shape=[n_examples, m_features]
-        A (training) dataset for picking the initial counterfactual
-        as initial value for starting the optimization procedure.
-
-    y_desired_proba : float (default: None)
-        A float within the range [0, 1] designating the desired
-        class probability for `y_desired`.
-        - If `y_desired_proba=None` (default), the first loss term
-        is `(lambda * model(x_counterfact) - y_desired)^2` where `y_desired`
-        is a class label
-        - If `y_desired_proba` is not None, the first loss term
-        is `(lambda * model(x_counterfact) - y_desired_proba)^2`
-
-    lammbda : Weighting parameter for the first loss term,
-        `(lambda * model(x_counterfact) - y_desired[_proba])^2`
-
-    random_seed : int (default=None)
-        If int, random_seed is the seed used by
-        the random number generator for selecting the inital counterfactual
-        from `X_dataset`.
-
-    """
-    if y_desired_proba is not None:
-        use_proba = True
-        if not hasattr(model, "predict_proba"):
-            raise AttributeError(
-                "Your `model` does not support "
-                "`predict_proba`. Set `y_desired_proba` "
-                " to `None` to use `predict`instead."
-            )
-    else:
-        use_proba = False
-
-    if y_desired_proba is None:
-        # class label
-        y_to_be_annealed_to = y_desired
-    else:
-        # class proba corresponding to class label y_desired
-        y_to_be_annealed_to = y_desired_proba
-
-    # start with random counterfactual
-    rng = np.random.RandomState(random_seed)
-    x_counterfact = X_dataset[rng.randint(X_dataset.shape[0])]
-
-    # compute median absolute deviation
-    mad = np.abs(np.median(X_dataset, axis=0) - x_reference) + 1e-8
-
-    def dist(x_reference, x_counterfact):
-        numerator = np.abs(x_reference - x_counterfact)
-        return np.sum(numerator / mad)
-
-    def loss(x_counterfact, lammbda):
-        if use_proba:
-            y_predict = model.predict_proba(x_counterfact.reshape(1, -1)).flatten()[
-                y_desired
-            ]
-        else:
-            y_predict = model.predict(
-                x_counterfact.reshape(1, -1)
-            )[0]
-
-        diff = lammbda * (y_predict - y_to_be_annealed_to) ** 2
-
-        return diff + dist(x_reference, x_counterfact)
-
-    res = minimize(loss, x_counterfact, args=(lammbda), method="Nelder-Mead")
-
-    if not res["success"]:
-        warnings.warn(res["message"])
-
-    x_counterfact = res["x"]
-
-    return x_counterfact
-
-
-# end of Raschka
+from scipy.special import softmax
 
 
 class WachterExplainer(Explainer):
+    """
+    Implements the Wachter Counterfactual Explanation method based on the paper
+    "Counterfactual Explanations without Opening the Black Box: Automated Decisions and the GDPR"
+    (Wachter et al., 2017).
+
+    Since it relies on black-box optimization (Nelder-Mead, COBYLA, etc.), it works for any model
+    that outputs probabilities or logits, including PyTorch, TensorFlow, and Scikit-Learn models,
+    without needing access to gradients.
+
+    Attributes:
+        lambda_param (float): The regularization strength. A higher lambda prioritizes changing
+            the class label (Prediction Loss) over keeping the instance close to the original
+            (Distance Loss). Default is 0.1.
+        max_iter (int): Maximum number of iterations for the scipy optimizer. Default is 1000.
+        optimization_method (str): The gradient-free optimization method used by scipy.optimize.
+            Options include 'COBYLA', 'Nelder-Mead', 'Powell'. Default is 'COBYLA'.
+            For more details, see: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
+        random_seed (int, optional): Seed for reproducibility.
+    """
     def __init__(
         self,
         lambda_param: float = 0.1,
         random_seed: Optional[int] = None,
+        max_iter: int = 1000,
+        optimization_method: str = "COBYLA",
     ):
-        """
-        Wachter method explainer using customized mlxtend's create_counterfactual.
-        Description: https://rasbt.github.io/mlxtend/user_guide/evaluate/create_counterfactual/
-
-        Args:
-            lambda_param: Regularization parameter for distance penalty
-            random_seed: Random seed for reproducibility
-        """
         self.lambda_param = lambda_param
         self.random_seed = random_seed
+        self.max_iter = max_iter
         self.source_df = None
+        self.optimization_method = optimization_method
 
     def __repr__(self) -> str:
-        return f"wachter(lambda_param={repr(self.lambda_param)}, random_seed={repr(self.random_seed)})"
+        return (
+            f"wachter(lambda_param={repr(self.lambda_param)}, method={self.optimization_method},"
+            f"max_iter={self.max_iter}, random_seed={self.random_seed})"
+        )
 
     def fit(self, model: Model, data: Dataset) -> None:
-        self.source_df = pd.DataFrame(data.data)
-        self.source_df
+        X_train = data.df if hasattr(data, "df") else data.data
+        if isinstance(X_train, pd.DataFrame):
+            X_train = X_train.values
+
+        medians = np.median(X_train, axis=0)
+        abs_diff = np.abs(X_train - medians)
+        self.mad = np.median(abs_diff, axis=0)
+
+        self.mad[self.mad < 1e-5] = 1.0
+
+        self.bounds = list(zip(X_train.min(axis=0), X_train.max(axis=0)))
 
     def explain(
         self, model: Model, data: Dataset, y_desired: int = None
     ) -> list[Counterfactual]:
+        if isinstance(data, TorchModel):
+            model._model.to("cuda")
+
         counterfactuals = []
 
         for instance in tqdm(data, unit="instance"):
@@ -187,6 +92,25 @@ class WachterExplainer(Explainer):
 
         return counterfactuals
 
+    def _loss_function(
+        self, x_candidate, model, x_original, target_class, lambda_param, mad
+    ):
+        """
+        The objective function to minimize:
+        Loss = lambda * (Prob(target) - 1)^2 + Distance(x_candidate, x_original)
+        """
+        x_candidate = x_candidate.reshape(1, -1)[0]
+
+        probs = model.predict_proba(x_candidate)[0]
+        probs = softmax(probs)
+        target_prob = probs[target_class]
+
+        pred_loss = (target_prob - 1.0) ** 2
+
+        dist_loss = np.sum(np.abs(x_candidate.flatten() - x_original.flatten()) / mad)
+
+        return lambda_param * pred_loss + dist_loss
+
     def _generate_counterfactual(
         self,
         instance_ds: Dataset,
@@ -196,33 +120,34 @@ class WachterExplainer(Explainer):
         """
         Generate a counterfactual using the Wachter method.
         """
-        instance = instance_ds.data[0]
-        original_class = model.predict(instance_ds)[0]
 
         try:
-            counterfactual_data = create_counterfactual(
-                x_reference=instance,
-                y_desired=target_class,
-                model=model,
-                X_dataset=self.source_df.values,
-                lammbda=self.lambda_param,
-                random_seed=self.random_seed,
+            original_class = model.predict(instance_ds)[0]
+            if target_class == original_class:
+                raise ValueError("Target class cannot be the same as original class")
+            x_instance = np.array(instance_ds.data[0]).flatten()
+
+            initial_guess = x_instance
+
+            result = minimize(
+                self._loss_function,
+                initial_guess,
+                args=(model, x_instance, target_class, self.lambda_param, self.mad),
+                method=self.optimization_method,
+                bounds=None,
+                options={"maxiter": self.max_iter, "disp": False},
             )
 
-            predicted_class = model.predict(counterfactual_data.reshape(1, -1))[0]
+            cf_candidate = result.x.reshape(1, -1)
 
-            if predicted_class != target_class:
-                raise ValueError(
-                    "Generated counterfactual does not produce target class"
+            if np.argmax(model.predict_proba(cf_candidate)[0]) == target_class:
+                return Counterfactual(
+                    original_data=np.array(instance_ds.data[0]),
+                    data=cf_candidate,
+                    original_class=original_class,
+                    target_class=np.argmax(model.predict_proba(cf_candidate)[0]),
+                    explainer=repr(self),
                 )
-
-            return Counterfactual(
-                original_data=instance,
-                data=counterfactual_data,
-                original_class=original_class,
-                target_class=predicted_class,
-                explainer=repr(self)
-            )
 
         except Exception as e:
             raise ValueError(f"Failed to generate counterfactual: {str(e)}")
