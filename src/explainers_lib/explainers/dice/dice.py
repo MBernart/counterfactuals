@@ -88,15 +88,15 @@ class DiceExplainer(Explainer):
             
             cf = self._generate_cf(instance_df, original_vector, model, y_target)
             if cf is not None:
-                counterfactuals.append(cf)
+                counterfactuals.extend(cf)
 
         return counterfactuals
 
     def explain_instance(
         self, instance_ds: Dataset, model: Model, target_class: Optional[int] = None
-    ) -> Optional[Counterfactual]:
+    ) -> List[Counterfactual]:
         """
-        Generate counterfactual for a single instance.
+        Generate counterfactuals for a single instance.
         """
         instance_df = instance_ds.df.copy()
         original_vector = instance_ds.data[0]
@@ -109,9 +109,9 @@ class DiceExplainer(Explainer):
         original_vector: np.ndarray, 
         model: Model, 
         target_class: int
-    ) -> Optional[Counterfactual]:
+    ) -> List[Counterfactual]:
         """
-        Helper to generate a single counterfactual using DiCE.
+        Helper to generate num_cfs counterfactuals using DiCE.
         """
         try:
             dice_exp = self.dice.generate_counterfactuals(
@@ -124,24 +124,27 @@ class DiceExplainer(Explainer):
             df_cfs = dice_exp.cf_examples_list[0].final_cfs_df
 
             if not df_cfs.empty:
-                candidate_raw_df = df_cfs[self.feature_names].iloc[[0]].copy()
-                
-                for col, dtype in self.feature_dtypes.items():
-                    if col in candidate_raw_df.columns:
-                        candidate_raw_df[col] = candidate_raw_df[col].astype(dtype)
+                cfes = []
+                for i in range(len(df_cfs)):
+                    candidate_raw_df = df_cfs[self.feature_names].iloc[[i]].copy()
+                    
+                    for col, dtype in self.feature_dtypes.items():
+                        if col in candidate_raw_df.columns:
+                            candidate_raw_df[col] = candidate_raw_df[col].astype(dtype)
 
-                candidate_vector = self.preprocessor.transform(candidate_raw_df).flatten()
-                
-                pred_orig = np.argmax(model.predict_proba(original_vector.reshape(1, -1)))
-                pred_cf = np.argmax(model.predict_proba(candidate_vector.reshape(1, -1)))
+                    candidate_vector = self.preprocessor.transform(candidate_raw_df).flatten()
+                    
+                    pred_orig = np.argmax(model.predict_proba(original_vector.reshape(1, -1)))
+                    pred_cf = np.argmax(model.predict_proba(candidate_vector.reshape(1, -1)))
 
-                return Counterfactual(
-                    original_data=original_vector,
-                    data=candidate_vector,
-                    original_class=pred_orig,
-                    target_class=pred_cf,
-                    explainer=repr(self),
-                )
+                    cfes.append(Counterfactual(
+                        original_data=original_vector,
+                        data=candidate_vector,
+                        original_class=pred_orig,
+                        target_class=pred_cf,
+                        explainer=repr(self),
+                    ))
+                return cfes
 
         except Exception as e:
             print(f"[WARN] DiCE failed for instance: {e}")
