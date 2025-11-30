@@ -1,5 +1,5 @@
-from explainers_lib.explainers.wachter import WachterExplainer
-from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
+from explainers_lib.explainers.native.wachter import WachterExplainer
+from explainers_lib.explainers.native.growing_spheres import GrowingSpheresExplainer
 from explainers_lib.explainers.celery_explainer import ActionableRecourseExplainer
 from explainers_lib.explainers.celery_explainer import FaceExplainer
 from explainers_lib.explainers.celery_explainer import DiceExplainer
@@ -42,9 +42,20 @@ model = TorchModel.deserialize(model_data)
 # Ensemble
 ensemble = Ensemble(
     model,
-    [WachterExplainer(), GrowingSpheresExplainer(),                   # Local explainers
-     ActionableRecourseExplainer(), DiceExplainer(), FaceExplainer(), # Carla explainers
-     AlibiCFProto(), AlibiCFRL()])                                    # Alibi explainers
+    [
+        # Native
+        WachterExplainer(),
+        GrowingSpheresExplainer(),
+        FaceExplainer(),
+        # Carla
+        # TODO(patryk): currently broken, but I am working on it! 
+        # ActionableRecourseExplainer(),
+        # Dice
+        DiceExplainer(),
+        # Alibi
+        AlibiCFProto(),
+        AlibiCFRL()
+    ])
 explainers = ensemble.get_explainers_repr()
 print(f"Used explainers: {[explainer for explainer in explainers]}")
 

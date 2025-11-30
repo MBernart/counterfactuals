@@ -1,4 +1,4 @@
-FROM python:3.13-slim AS builder
+FROM python:3.10-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -10,10 +10,10 @@ RUN pip install --upgrade pip
 COPY ./src ./src
 RUN pip install --user --no-cache-dir -e ./src
 
-COPY ./explainers/growing_spheres/requirements.minimal.txt ./requirements.txt
+COPY ./explainers/native/requirements.minimal.txt ./requirements.txt
 RUN pip install --user --no-cache-dir -r ./requirements.txt
 
-FROM python:3.13-slim
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -25,7 +25,10 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./explainers/growing_spheres/main.py ./explainers/growing_spheres/main.py
+COPY ./explainers/native/growing_spheres.py ./explainers/native/growing_spheres.py
+COPY ./explainers/native/wachter.py ./explainers/native/wachter.py
+COPY ./explainers/native/face.py ./explainers/native/face.py
+COPY ./explainers/native/dispatch.sh ./dispatch.sh
 
 USER app
 
@@ -33,4 +36,5 @@ ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 
-CMD ["celery", "-A", "explainers.growing_spheres.main", "worker", "-l", "info", "-n", "growing_spheres_worker@%h", "-Q", "growing_spheres,celery"]
+ENTRYPOINT ["./dispatch.sh"]
+CMD ["help"]

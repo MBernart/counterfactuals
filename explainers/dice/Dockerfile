@@ -1,4 +1,4 @@
-FROM python:3.13-slim AS builder
+FROM python:3.10-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -10,10 +10,10 @@ RUN pip install --upgrade pip
 COPY ./src ./src
 RUN pip install --user --no-cache-dir -e ./src
 
-COPY ./explainers/wachter/requirements.minimal.txt ./requirements.txt
+COPY ./explainers/dice/requirements.minimal.txt ./requirements.txt
 RUN pip install --user --no-cache-dir -r ./requirements.txt
 
-FROM python:3.13-slim
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -25,7 +25,7 @@ WORKDIR /app
 COPY --from=builder /root/.local /home/app/.local
 
 COPY ./src ./src
-COPY ./explainers/wachter/main.py ./explainers/wachter/main.py
+COPY ./explainers/dice/dice.py ./explainers/dice/dice.py
 
 USER app
 
@@ -33,4 +33,4 @@ ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 
-CMD ["celery", "-A", "explainers.wachter.main", "worker", "-l", "info", "-n", "wachter_worker@%h", "-Q", "wachter,celery"]
+CMD ["celery", "-A", "explainers.dice.dice", "worker", "-l", "info", "-n", "dice_worker@%h", "-Q", "dice,celery"]

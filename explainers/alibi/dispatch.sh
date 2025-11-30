@@ -22,11 +22,11 @@ case "$COMMAND" in
         ;;
 
     "cfproto")
-	    celery -A explainers.alibi.cfproto worker -l info -n alibi_cfproto_worker@%h -Q alibi_cfproto,celery
+	    celery -A explainers.alibi.cfproto worker -l info -n alibi_cfproto_worker@%h -Q alibi_cfproto,celery -P solo
         ;;
 
     "cfrl")
-	    celery -A explainers.alibi.cfrl worker -l info -n alibi_cfrl_worker@%h -Q alibi_cfrl,celery
+	    celery -A explainers.alibi.cfrl worker -l info -n alibi_cfrl_worker@%h -Q alibi_cfrl,celery -P solo
         ;;
 
     *)

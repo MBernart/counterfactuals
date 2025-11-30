@@ -1,6 +1,6 @@
 # You can run the explainers locally
-from explainers_lib.explainers.wachter import WachterExplainer
-from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
+from explainers_lib.explainers.native.wachter import WachterExplainer
+from explainers_lib.explainers.native.growing_spheres import GrowingSpheresExplainer
 
 # Or you can run it via celery, or even run some locally and some via celery
 # from explainers_lib.explainers.celery_explainer import WachterExplainer
@@ -64,9 +64,20 @@ model = TorchModel.deserialize(model_data)
 # Ensemble
 ensemble = Ensemble(
     model,
-    [WachterExplainer(), GrowingSpheresExplainer(),                   # Local explainers
-     ActionableRecourseExplainer(), DiceExplainer(), FaceExplainer(), # Carla explainers
-     AlibiCFProto(), AlibiCFRL()],                                    # Alibi explainers
+    [
+        # Native
+        WachterExplainer(),
+        GrowingSpheresExplainer(),
+        FaceExplainer(),
+        # Carla
+        # TODO(patryk): currently broken, but I am working on it! 
+        # ActionableRecourseExplainer(),
+        # Dice
+        DiceExplainer(),
+        # Alibi
+        AlibiCFProto(),
+        AlibiCFRL()
+    ],
     Pareto())
 print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
 

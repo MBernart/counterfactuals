@@ -40,6 +40,9 @@ class Dataset:
         self._fill_categorical_values()
         self._fill_allowable_ranges()
 
+        self.categorical_features.sort(key=self.features.index)
+        self.continuous_features.sort(key=self.features.index)
+
         self.categorical_features_ids = [self.features.index(f) for f in self.categorical_features]
         self.continuous_features_ids  = [self.features.index(f) for f in self.continuous_features]
         self.immutable_features_ids   = [self.features.index(f) for f in self.immutable_features]
