@@ -77,8 +77,6 @@ class FaceExplainer(Explainer):
                   f"but data has {self.X.shape[1]} columns. Falling back to generic indices.")
             self.transformed_feature_names = [str(i) for i in range(self.X.shape[1])]
 
-        print(self.transformed_feature_names)
-
         # 3. Subsampling (Optimization)
         if 0 < self.fraction < 1:
             n = max(2, int(len(self.X) * self.fraction))  # at least 2 samples
