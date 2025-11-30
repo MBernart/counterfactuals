@@ -253,6 +253,7 @@ class Dataset:
     @staticmethod
     def deserialize(data: bytes) -> "Dataset":
         obj = pickle.loads(data)
+        unknown_types = sio.get_untrusted_types(data=obj["preprocessor"])
         return Dataset(
             Dataset._bytes_to_dataframe(obj["df"]),
             obj["target"],
@@ -262,12 +263,5 @@ class Dataset:
             categorical_values=obj["categorical_values"],
             continuous_features=obj["continuous_features"],
             allowable_ranges=obj["allowable_ranges"],
-            preprocessor=sio.loads(obj["preprocessor"], trusted=[
-                'numpy.float64',
-                'numpy.int64',
-                'sklearn.compose._column_transformer.ColumnTransformer',
-                'sklearn.pipeline.Pipeline',
-                'sklearn.preprocessing._data.StandardScaler',
-                'sklearn.preprocessing._encoders.OneHotEncoder'
-            ])
+            preprocessor=sio.loads(obj["preprocessor"], trusted=unknown_types)
         )
