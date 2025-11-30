@@ -53,8 +53,15 @@ class DiceExplainer(Explainer):
         Uses the RAW dataframe so DiCE can handle categoricals correctly.
         """
         df = data.df.copy()
+        
+        cols_to_fix = [col for col in data.continuous_features if col in df.columns]
+        
+        if cols_to_fix:
+            df[cols_to_fix] = df[cols_to_fix].astype("float64")
+
         target_col = "target"
-        df[target_col] = data.target
+        target_df = pd.DataFrame({target_col: data.target}, index=df.index)
+        df = pd.concat([df, target_df], axis=1)
 
         self.feature_dtypes = data.df[data.features].dtypes
 
@@ -80,6 +87,9 @@ class DiceExplainer(Explainer):
         y_target = y_desired or self.desired_class or 1
         
         df_raw = data.df.reset_index(drop=True)
+        for col in data.continuous_features:
+            if col in df_raw.columns:
+                df_raw[col] = df_raw[col].astype("float64")
 
         for i in tqdm(range(len(df_raw)), unit="instance"):
             instance_df = df_raw.iloc[[i]]
@@ -165,15 +175,20 @@ class _ModelPipelineWrapper:
         so the OneHotEncoder recognizes the categories.
         """
         df_fixed = dataframe.copy()
-        for col, dtype in self.feature_dtypes.items():
-            if col in df_fixed.columns:
-                try:
-                    df_fixed[col] = df_fixed[col].astype(dtype)
-                except ValueError:
-                    # Fallback: sometimes '1.0' (str) fails to cast directly to int
-                    # We try casting to float first, then int
-                    if np.issubdtype(dtype, np.integer):
-                         df_fixed[col] = pd.to_numeric(df_fixed[col]).astype(dtype)
+        
+        numeric_cols = [c for c, d in self.feature_dtypes.items() if np.issubdtype(d, np.number)]
+        object_cols = [c for c, d in self.feature_dtypes.items() if d == object or str(d) == 'object']
+        
+        if numeric_cols:
+            valid_num = [c for c in numeric_cols if c in df_fixed.columns]
+            if valid_num:
+                df_fixed[valid_num] = df_fixed[valid_num].astype("float64")
+        
+        if object_cols:
+            valid_obj = [c for c in object_cols if c in df_fixed.columns]
+            if valid_obj:
+                df_fixed[valid_obj] = df_fixed[valid_obj].astype(str)
+
         return df_fixed
 
     def predict_proba(self, dataframe):
