@@ -31,6 +31,7 @@ class WachterExplainer(Explainer):
             For more details, see: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
         random_seed (int, optional): Seed for reproducibility.
     """
+
     def __init__(
         self,
         lambda_param: float = 0.1,
@@ -151,32 +152,3 @@ class WachterExplainer(Explainer):
 
         except Exception as e:
             raise ValueError(f"Failed to generate counterfactual: {str(e)}")
-
-    def explain_instance(
-        self, instance_ds: Dataset, model: Model, target_class: Optional[int] = None
-    ) -> Optional[Counterfactual]:
-        original_class = model.predict(instance_ds)[0]
-
-        if target_class is not None:
-            if target_class == original_class:
-                raise ValueError("Target class cannot be the same as original class")
-            try:
-                return self._generate_counterfactual(instance_ds, model, target_class)
-            except ValueError:
-                return None
-        else:
-            num_classes = (
-                len(set(instance_ds.target)) if hasattr(instance_ds, "target") else 2
-            )
-            for target_class in range(num_classes):
-                if target_class == original_class:
-                    continue
-
-                try:
-                    cf = self._generate_counterfactual(instance_ds, model, target_class)
-                    if cf is not None:
-                        return cf
-                except ValueError:
-                    continue
-
-            return None
