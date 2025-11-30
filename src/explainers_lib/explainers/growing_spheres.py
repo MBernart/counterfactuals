@@ -19,7 +19,9 @@ class GrowingSpheresExplainer(Explainer):
         # No fitting needed for Growing Spheres
         pass
 
-    def explain(self, model: Model, data: Dataset) -> list[Counterfactual]:
+    def explain(
+        self, model: Model, data: Dataset, y_desired: int = None
+    ) -> list[Counterfactual]:
         counterfactuals: list[Counterfactual] = []
 
         # Assuming data is an iterable, for each instance
@@ -28,16 +30,16 @@ class GrowingSpheresExplainer(Explainer):
             original_class = model.predict(instance)[0]
 
             # Try to find a counterfactual for a different class
-            for target_class in range(len(set(data.target))):
-                if target_class == original_class:
-                    continue
+            if y_desired == original_class:
+                continue
 
-                try:
-                    cf = self._generate_counterfactual(instance, model, target_class, original_class)
-                    counterfactuals.append(cf)
-                    break  # Stop after finding the first valid CF
-                except ValueError:
-                    continue  # Try next target class
+            try:
+                cf = self._generate_counterfactual(
+                    instance, model, y_desired, original_class
+                )
+                counterfactuals.append(cf)
+            except ValueError:
+                continue  # Try next target class
 
         return counterfactuals
 
@@ -119,8 +121,10 @@ class GrowingSpheresExplainer(Explainer):
             pred_classes = model.predict(candidates)
 
             for i, pred_class in enumerate(pred_classes):
-                if pred_class == target_class:
-                    return Counterfactual(instance, candidates[i], original_class, pred_class, repr(self))
+                if (target_class is None and pred_class != original_class) or pred_class == target_class:
+                    return Counterfactual(
+                        instance, candidates[i], original_class, pred_class, repr(self)
+                    )
 
             radius += self.step_size
 
