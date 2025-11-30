@@ -47,18 +47,32 @@ class ScoreBasedAggregator(AggregatorBase):
     def calculate_scores(self, cfs: List[Counterfactual]) -> pd.DataFrame:
         """Calculates the standard scores for a list of counterfactuals."""
 
-        original_data = cfs[0].original_data.reshape(1, -1)
-        cfs_data = np.array([cf.data for cf in cfs])
+        cfs_data_ohe = np.array([cf.data for cf in cfs])
+        cfs_df_raw = self.data.inverse_transform(cfs_data_ohe)
+        cfs_data_raw = cfs_df_raw.to_numpy()
+
+        # note: must be 2D (1, N) because scores.py slices it like x[:, indices]
+        original_data_ohe = cfs[0].original_data.reshape(1, -1)
+        original_df_raw = self.data.inverse_transform(original_data_ohe)
+        original_data_raw = original_df_raw.to_numpy() 
+
+        training_data_raw = self.data.df.to_numpy()
+
+        feature_names = self.data.features
+        
+        cont_indices = [feature_names.index(col) for col in self.data.continuous_features]
+        cat_indices = [feature_names.index(col) for col in self.data.categorical_features]
+
         cfs_target = np.array([cf.target_class for cf in cfs])
 
         return get_scores(
-            cfs=cfs_data,
+            cfs=cfs_data_raw,
             cf_predicted_classes=cfs_target,
-            training_data=self.data.data,
+            x=original_data_raw,
+            training_data=training_data_raw,
             training_data_predicted_classes=self.train_preds,
-            x=original_data,
-            continous_indices=self.data.continuous_features_ids,
-            categorical_indices=self.data.categorical_features_ids,
+            continous_indices=cont_indices,
+            categorical_indices=cat_indices,
             k_neighbors_feasib=self.k_neigh_feasibility,
             k_neighbors_discriminative=self.k_neigh_discriminative,
         ).reset_index(drop=True)
