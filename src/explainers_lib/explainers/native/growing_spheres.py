@@ -121,7 +121,7 @@ class GrowingSpheresExplainer(Explainer):
             pred_classes = model.predict(candidates)
 
             for i, pred_class in enumerate(pred_classes):
-                if (target_class is None and pred_class != original_class) or pred_class == target_class:
+                if (pred_class != original_class) and ((target_class is None) or (target_class == pred_class)):
                     return Counterfactual(
                         instance, candidates[i], original_class, pred_class, repr(self)
                     )

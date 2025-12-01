@@ -147,6 +147,9 @@ class DiceExplainer(Explainer):
                     pred_orig = np.argmax(model.predict_proba(original_vector.reshape(1, -1)))
                     pred_cf = np.argmax(model.predict_proba(candidate_vector.reshape(1, -1)))
 
+                    if pred_cf == pred_orig:
+                        continue
+
                     cfes.append(Counterfactual(
                         original_data=original_vector,
                         data=candidate_vector,
