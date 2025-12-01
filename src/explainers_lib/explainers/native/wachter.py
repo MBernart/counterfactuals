@@ -102,7 +102,7 @@ class WachterExplainer(Explainer):
             self.feature_bounds.append((0.0, 1.0))
 
     def explain(self, model: Model, data: Dataset, y_desired: int = None) -> List[Counterfactual]:
-        if isinstance(model, TorchModel):
+        if isinstance(model, TorchModel) and model._torch.cuda.is_available():
             model._model.to("cuda")
 
         counterfactuals = []
