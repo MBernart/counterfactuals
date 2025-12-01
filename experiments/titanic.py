@@ -3,13 +3,13 @@ from sklearn.model_selection import train_test_split
 from explainers_lib.explainers.native.wachter import WachterExplainer
 from explainers_lib.explainers.native.growing_spheres import GrowingSpheresExplainer
 from explainers_lib.explainers.celery_explainer import ActionableRecourseExplainer
-from explainers_lib.explainers.celery_explainer import FaceExplainer
-from explainers_lib.explainers.celery_explainer import DiceExplainer
+from explainers_lib.explainers.native.face import FaceExplainer
+from explainers_lib.explainers.dice.dice import DiceExplainer
 from explainers_lib.explainers.celery_explainer import AlibiCFProto
 from explainers_lib.explainers.celery_explainer import AlibiCFRL
-from explainers_lib.aggregators import Pareto, All
+from explainers_lib.aggregators import Pareto, IdealPoint, BalancedPoint, TOPSIS, DensityBased, ScoreBasedAggregator
 from explainers_lib.datasets import Dataset
-from explainers_lib.ensemble import Ensemble
+from explainers_lib.ensemble import Ensemble, cfs_group_by_original_data, print_cfs
 from explainers_lib.model import TorchModel
 
 
@@ -41,20 +41,32 @@ ensemble = Ensemble(
     model, 
     [
         # Native
-        WachterExplainer(),
-        GrowingSpheresExplainer(),
-        FaceExplainer(),
-        # Carla
-        # TODO(patryk): currently broken, but I am working on it! 
-        # ActionableRecourseExplainer(),
-        # Dice
-        DiceExplainer(),
-        # Alibi
+        WachterExplainer(lambda_param=[0.1, 0.5, 1, 5, 10, 50, 100]),
+        GrowingSpheresExplainer(max_radius=10),
+        FaceExplainer(fraction=1.0),
+        # # Carla
+        # # TODO(patryk): currently broken, but I am working on it! 
+        # # ActionableRecourseExplainer(),
+        # # Dice
+        DiceExplainer(num_cfs=10),
+        # # Alibi
         AlibiCFProto(),
         AlibiCFRL()
-    ],
-    All())
+    ])
+explainers = ensemble.get_explainers_repr()
 ensemble.fit(ds)
-cfs = ensemble.explain(ds[:5], pretty_print=True, pretty_print_postprocess=ds.inverse_transform, feature_names=ds.features)
-cfs
 
+explain_idx = 20
+all_cfs = ensemble.explain(ds[explain_idx], pretty_print=True, pretty_print_postprocess=ds.inverse_transform, feature_names=ds.features)
+
+for selector in [DensityBased(), Pareto(), IdealPoint(), BalancedPoint(), TOPSIS()]:
+    if isinstance(selector, ScoreBasedAggregator):
+        selector.fit(model, ds)
+
+    all_selected_cfs = list()
+    for cfs in cfs_group_by_original_data(all_cfs).values():
+        selected_cfs = selector(cfs)
+        all_selected_cfs.extend(selected_cfs)
+
+    print(selector)
+    print_cfs(all_selected_cfs, ds.features, ds[explain_idx], explainers, model, ds.inverse_transform)
