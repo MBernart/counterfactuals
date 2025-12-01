@@ -37,8 +37,14 @@ class FaceExplainer(Explainer):
         self.model = None
         self.X = None
         self.y = None
-        self.feature_names = None
+        
+        # We need to distinguish between original feature names and 
+        # the names of the columns in the transformed (encoded) numpy array.
+        self.original_feature_names = None
+        self.transformed_feature_names = None
+        
         self.neigh = None
+        self.dataset_ref = None # Reference to dataset metadata
 
     def __repr__(self):
         return f"face_explainer(mode={self.mode}, fraction={self.fraction}, n_neighbors={self.n_neighbors})"
@@ -49,11 +55,29 @@ class FaceExplainer(Explainer):
         Builds a nearest-neighbor graph.
         """
         self.model = model
+        self.dataset_ref = data
+        
         self.X = np.array(data.data)
         self.y = np.array(data.target)
-        self.feature_names = data.features
+        self.original_feature_names = data.features
 
-        # Optionally subsample dataset to fraction
+        # Reconstruct Transformed Feature Names
+        self.transformed_feature_names = []
+        
+        self.transformed_feature_names.extend(data.continuous_features)
+        
+        for feat in data.categorical_features:
+            categories = data.categorical_values.get(feat, [])
+            encoded_names = [f"{feat}_{str(val)}" for val in categories]
+            self.transformed_feature_names.extend(encoded_names)
+
+        # Validation: Ensure our name generation matches the array width
+        if len(self.transformed_feature_names) != self.X.shape[1]:
+            print(f"[WARN] Feature name mismatch. Generated {len(self.transformed_feature_names)} names "
+                  f"but data has {self.X.shape[1]} columns. Falling back to generic indices.")
+            self.transformed_feature_names = [str(i) for i in range(self.X.shape[1])]
+
+        # 3. Subsampling (Optimization)
         if 0 < self.fraction < 1:
             n = max(2, int(len(self.X) * self.fraction))  # at least 2 samples
             if n < len(self.X):
@@ -74,7 +98,8 @@ class FaceExplainer(Explainer):
         Generate counterfactuals for multiple instances.
         """
         counterfactuals = []
-        df = pd.DataFrame(data.data, columns=data.features)
+        
+        df = pd.DataFrame(data.data, columns=self.transformed_feature_names)
         y_target = y_desired or self.desired_class or 1
 
         for i in tqdm(range(len(df)), unit="instance"):
@@ -91,7 +116,7 @@ class FaceExplainer(Explainer):
         """
         Generate counterfactual for a single instance.
         """
-        instance_df = pd.DataFrame(instance_ds.data, columns=self.feature_names)
+        instance_df = pd.DataFrame(instance_ds.data, columns=self.transformed_feature_names)
         target = target_class or self.desired_class or 1
         return self._generate_cf(instance_df, model, target)
 
@@ -100,32 +125,40 @@ class FaceExplainer(Explainer):
         Helper to generate a single counterfactual using the FACE approach.
         """
         try:
-            instance = instance_df[self.feature_names].values[0]
+            # Extract the numpy array for the instance (1, n_features_transformed)
+            instance = instance_df[self.transformed_feature_names].values[0]
 
-            pred_orig = np.argmax(model.predict_proba(instance.reshape(1, -1)))
+            # Check Original Prediction
+            pred_probs = model.predict_proba(instance.reshape(1, -1))
+            pred_orig = np.argmax(pred_probs)
+            
             if pred_orig == target_class:
                 return None  # Already classified as desired
 
             # kNN search for similar points
             distances, indices = self.neigh.kneighbors(instance.reshape(1, -1))
             candidates = self.X[indices[0]]
-            preds = np.argmax(model.predict_proba(candidates), axis=1)
+            
+            # Filter Candidates by Target Class
+            candidate_probs = model.predict_proba(candidates)
+            candidate_preds = np.argmax(candidate_probs, axis=1)
+            
+            valid_mask = (candidate_preds == target_class)
+            valid_candidates = candidates[valid_mask]
+            valid_distances = distances[0][valid_mask]
 
-            # Filter to those in desired class
-            valid_idx = np.where(preds == target_class)[0]
-            if len(valid_idx) == 0:
+            if len(valid_candidates) == 0:
                 return None
 
-            # Select the closest valid candidate
-            best_idx = valid_idx[np.argmin(distances[0][valid_idx])]
-            candidate = candidates[best_idx]
+            # Select the Closest Valid Candidate (Shortest Path in Graph)
+            best_idx = np.argmin(valid_distances)
+            candidate_cf = valid_candidates[best_idx]
 
-            pred_cf = target_class
             return Counterfactual(
                 original_data=instance,
-                data=candidate,
+                data=candidate_cf,
                 original_class=pred_orig,
-                target_class=pred_cf,
+                target_class=target_class,
                 explainer=repr(self),
             )
 

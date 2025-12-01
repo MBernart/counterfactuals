@@ -53,8 +53,15 @@ class DiceExplainer(Explainer):
         Uses the RAW dataframe so DiCE can handle categoricals correctly.
         """
         df = data.df.copy()
+        
+        cols_to_fix = [col for col in data.continuous_features if col in df.columns]
+        
+        if cols_to_fix:
+            df[cols_to_fix] = df[cols_to_fix].astype("float64")
+
         target_col = "target"
-        df[target_col] = data.target
+        target_df = pd.DataFrame({target_col: data.target}, index=df.index)
+        df = pd.concat([df, target_df], axis=1)
 
         self.feature_dtypes = data.df[data.features].dtypes
 
@@ -80,6 +87,9 @@ class DiceExplainer(Explainer):
         y_target = y_desired or self.desired_class or 1
         
         df_raw = data.df.reset_index(drop=True)
+        for col in data.continuous_features:
+            if col in df_raw.columns:
+                df_raw[col] = df_raw[col].astype("float64")
 
         for i in tqdm(range(len(df_raw)), unit="instance"):
             instance_df = df_raw.iloc[[i]]
@@ -88,15 +98,15 @@ class DiceExplainer(Explainer):
             
             cf = self._generate_cf(instance_df, original_vector, model, y_target)
             if cf is not None:
-                counterfactuals.append(cf)
+                counterfactuals.extend(cf)
 
         return counterfactuals
 
     def explain_instance(
         self, instance_ds: Dataset, model: Model, target_class: Optional[int] = None
-    ) -> Optional[Counterfactual]:
+    ) -> List[Counterfactual]:
         """
-        Generate counterfactual for a single instance.
+        Generate counterfactuals for a single instance.
         """
         instance_df = instance_ds.df.copy()
         original_vector = instance_ds.data[0]
@@ -109,9 +119,9 @@ class DiceExplainer(Explainer):
         original_vector: np.ndarray, 
         model: Model, 
         target_class: int
-    ) -> Optional[Counterfactual]:
+    ) -> List[Counterfactual]:
         """
-        Helper to generate a single counterfactual using DiCE.
+        Helper to generate num_cfs counterfactuals using DiCE.
         """
         try:
             dice_exp = self.dice.generate_counterfactuals(
@@ -124,24 +134,27 @@ class DiceExplainer(Explainer):
             df_cfs = dice_exp.cf_examples_list[0].final_cfs_df
 
             if not df_cfs.empty:
-                candidate_raw_df = df_cfs[self.feature_names].iloc[[0]].copy()
-                
-                for col, dtype in self.feature_dtypes.items():
-                    if col in candidate_raw_df.columns:
-                        candidate_raw_df[col] = candidate_raw_df[col].astype(dtype)
+                cfes = []
+                for i in range(len(df_cfs)):
+                    candidate_raw_df = df_cfs[self.feature_names].iloc[[i]].copy()
+                    
+                    for col, dtype in self.feature_dtypes.items():
+                        if col in candidate_raw_df.columns:
+                            candidate_raw_df[col] = candidate_raw_df[col].astype(dtype)
 
-                candidate_vector = self.preprocessor.transform(candidate_raw_df).flatten()
-                
-                pred_orig = np.argmax(model.predict_proba(original_vector.reshape(1, -1)))
-                pred_cf = np.argmax(model.predict_proba(candidate_vector.reshape(1, -1)))
+                    candidate_vector = self.preprocessor.transform(candidate_raw_df).flatten()
+                    
+                    pred_orig = np.argmax(model.predict_proba(original_vector.reshape(1, -1)))
+                    pred_cf = np.argmax(model.predict_proba(candidate_vector.reshape(1, -1)))
 
-                return Counterfactual(
-                    original_data=original_vector,
-                    data=candidate_vector,
-                    original_class=pred_orig,
-                    target_class=pred_cf,
-                    explainer=repr(self),
-                )
+                    cfes.append(Counterfactual(
+                        original_data=original_vector,
+                        data=candidate_vector,
+                        original_class=pred_orig,
+                        target_class=pred_cf,
+                        explainer=repr(self),
+                    ))
+                return cfes
 
         except Exception as e:
             print(f"[WARN] DiCE failed for instance: {e}")
@@ -165,15 +178,20 @@ class _ModelPipelineWrapper:
         so the OneHotEncoder recognizes the categories.
         """
         df_fixed = dataframe.copy()
-        for col, dtype in self.feature_dtypes.items():
-            if col in df_fixed.columns:
-                try:
-                    df_fixed[col] = df_fixed[col].astype(dtype)
-                except ValueError:
-                    # Fallback: sometimes '1.0' (str) fails to cast directly to int
-                    # We try casting to float first, then int
-                    if np.issubdtype(dtype, np.integer):
-                         df_fixed[col] = pd.to_numeric(df_fixed[col]).astype(dtype)
+        
+        numeric_cols = [c for c, d in self.feature_dtypes.items() if np.issubdtype(d, np.number)]
+        object_cols = [c for c, d in self.feature_dtypes.items() if d == object or str(d) == 'object']
+        
+        if numeric_cols:
+            valid_num = [c for c in numeric_cols if c in df_fixed.columns]
+            if valid_num:
+                df_fixed[valid_num] = df_fixed[valid_num].astype("float64")
+        
+        if object_cols:
+            valid_obj = [c for c in object_cols if c in df_fixed.columns]
+            if valid_obj:
+                df_fixed[valid_obj] = df_fixed[valid_obj].astype(str)
+
         return df_fixed
 
     def predict_proba(self, dataframe):
