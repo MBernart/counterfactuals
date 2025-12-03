@@ -39,11 +39,9 @@ class CFProto(Explainer):
         print(f"CFProto: Model prediction distribution: {dict(zip(unique_preds, pred_counts))}")
         print(f"CFProto: Dynamic 'k' set to {self.safe_k} based on smallest predicted bucket.")
 
-        num_transformer = data.preprocessor.named_transformers_['num']
-        cat_transformer = data.preprocessor.named_transformers_['cat']
-        onehot_encoder = cat_transformer.named_steps['onehot']
-
         if data.continuous_features:
+            num_transformer = data.preprocessor.named_transformers_['num']
+
             mins_orig = [data.allowable_ranges[feat][0] for feat in data.continuous_features]
             maxs_orig = [data.allowable_ranges[feat][1] for feat in data.continuous_features]
             
@@ -56,6 +54,9 @@ class CFProto(Explainer):
 
         cat_vars_dict = {}
         if data.categorical_features:
+            cat_transformer = data.preprocessor.named_transformers_['cat']
+            onehot_encoder = cat_transformer.named_steps['onehot']
+
             is_ohe = True
             categories_list = onehot_encoder.categories_
             
@@ -97,7 +98,8 @@ class CFProto(Explainer):
 
         shape = (1,) + data.data.shape[1:]
         self.cf = CounterfactualProto(
-            lambda x: model.predict_proba(x),
+            # TODO: remove this when we switch to a binary problem (not smiling -> smiling)
+            lambda x: model.predict_proba(x)[:, :2],
             shape,
             kappa=0.,
             beta=.1, # Increase to heavily penalize changes.
