@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import subprocess
 import json
 import time
 import pickle
@@ -37,7 +38,7 @@ RESULTS_FILE = "experiments/titanic_results.json"
 def clear_screen():
     console.clear()
 
-def get_formatted_changes(ds: Dataset, original_vector: np.ndarray, cf_vector: np.ndarray) -> str:
+def get_change_list(ds: Dataset, original_vector: np.ndarray, cf_vector: np.ndarray) -> List[Dict[str, str]]:
     # Calculate impact
     diff = np.abs(cf_vector - original_vector)
     changes = []
@@ -79,8 +80,6 @@ def get_formatted_changes(ds: Dataset, original_vector: np.ndarray, cf_vector: n
     orig_df = ds.inverse_transform(np.array([original_vector]))
     cf_df = ds.inverse_transform(np.array([cf_vector]))
     
-    parts = []
-    
     # If we couldn't calculate impact for categories or list is empty, fallback to simple diff
     if not changes:
         # Simple fallback check
@@ -88,8 +87,9 @@ def get_formatted_changes(ds: Dataset, original_vector: np.ndarray, cf_vector: n
             old_val = orig_df[col].iloc[0]
             new_val = cf_df[col].iloc[0]
             if old_val != new_val:
-                 changes.append({'name': col, 'impact': 0}) # Dummy impact
+                 changes.append({'name': col, 'impact': 0})
 
+    result = []
     for i, change in enumerate(changes):
         name = change['name']
         old_val = orig_df[name].iloc[0]
@@ -104,11 +104,52 @@ def get_formatted_changes(ds: Dataset, original_vector: np.ndarray, cf_vector: n
         else:
             val_str = f"{old_val}->{new_val}"
             
-        item_str = f"[bold]{name}[/bold]: {val_str}"
+        result.append({'name': name, 'val_str': val_str})
         
-        parts.append(item_str)
-        
+    return result
+
+def get_formatted_changes(ds: Dataset, original_vector: np.ndarray, cf_vector: np.ndarray) -> str:
+    changes = get_change_list(ds, original_vector, cf_vector)
+    parts = [f"[bold]{c['name']}[/bold]: {c['val_str']}" for c in changes]
     return ", ".join(parts)
+
+def to_unicode_bold(text: str) -> str:
+    result = []
+    for char in text:
+        codepoint = ord(char)
+        if 65 <= codepoint <= 90: # A-Z
+            result.append(chr(codepoint + 119743))
+        elif 97 <= codepoint <= 122: # a-z
+            result.append(chr(codepoint + 119737))
+        elif 48 <= codepoint <= 57: # 0-9
+            result.append(chr(codepoint + 120734))
+        else:
+            result.append(char)
+    return "".join(result)
+
+def copy_cfs_to_clipboard(ds: Dataset, entries: List[Dict]):
+    text_parts = []
+    for entry in entries:
+        orig = np.array(entry['original_data'])
+        cf = np.array(entry['cf_data'])
+        changes = get_change_list(ds, orig, cf)
+        line_parts = [f"{to_unicode_bold(c['name'])}: {c['val_str']}" for c in changes]
+        text_parts.append(", ".join(line_parts))
+    
+    full_text = "\n".join(text_parts)
+    
+    try:
+        # Use plain text selection
+        p = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+        p.communicate(input=full_text.encode('utf-8'))
+        console.print("[bold green]Copied to clipboard (Unicode)![/bold green]")
+        time.sleep(0.5)
+    except FileNotFoundError:
+        console.print("[bold red]xclip not found. Please install xclip to use this feature.[/bold red]")
+        time.sleep(2)
+    except Exception as e:
+        console.print(f"[bold red]Error copying to clipboard: {e}[/bold red]")
+        time.sleep(2)
 
 def load_titanic_data():
     with console.status("[bold green]Loading Titanic Dataset..."):
@@ -271,13 +312,15 @@ def view_results():
             )
         
         console.print(table)
-        console.print("\n[b]Options:[/b] [yellow]n[/yellow] (next), [yellow]p[/yellow] (previous), [red]q[/red] (quit view)")
+        console.print("\n[b]Options:[/b] [yellow]n[/yellow] (next), [yellow]p[/yellow] (previous), [cyan]c[/cyan] (copy all), [red]q[/red] (quit view)")
         choice = Prompt.ask("Action")
 
         if choice.lower() == 'n':
             current_instance_idx = (current_instance_idx + 1) % total_unique_instances
         elif choice.lower() == 'p':
             current_instance_idx = (current_instance_idx - 1 + total_unique_instances) % total_unique_instances
+        elif choice.lower() == 'c':
+            copy_cfs_to_clipboard(ds, entries)
         elif choice.lower() == 'q':
             break
         else:
