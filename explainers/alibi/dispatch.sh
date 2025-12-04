@@ -33,6 +33,10 @@ case "$COMMAND" in
 	    celery -A explainers.alibi.cfrl_celeba worker -l info -n alibi_cfrl_celeba_worker@%h -Q alibi_cfrl_celeba,celery -P solo
         ;;
 
+    "cfrl_mnist")
+	    celery -A explainers.alibi.cfrl_mnist worker -l info -n alibi_cfrl_mnist_worker@%h -Q alibi_cfrl_mnist,celery -P solo
+        ;;
+
     *)
         echo "ERROR: Unknown command '$COMMAND'."
         usage
