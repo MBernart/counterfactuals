@@ -95,7 +95,7 @@ class CFRLMNIST(Explainer):
         latent_dim=32,
         coeff_sparsity=0.5,
         coeff_consistency=0.5,
-        train_steps=25_000,
+        train_steps=50_000,
         batch_size=32,
     ):
         self.latent_dim = latent_dim
@@ -191,8 +191,7 @@ class CFRLMNIST(Explainer):
             self.explainer.load("cfrl_mnist.dill", predictor=predictor_wrapper)
         else:
             self.explainer.fit(X=X_train)
-
-        self.explainer.save("cfrl_mnist.dill")
+            self.explainer.save("cfrl_mnist.dill")
         # self.save("cfrl/cfrl_mnist.pth")
 
     def _regular_predictor_wrapper(self, x: np.ndarray) -> np.ndarray:
