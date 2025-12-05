@@ -34,7 +34,8 @@ class CFProto(Explainer):
         else:
             min_pred_samples = 0
 
-        self.safe_k = int(max(1, min(20, min_pred_samples)))
+        self.available_classes = np.arange(preds.shape[1])
+        # self.safe_k = int(max(1, min(20, min_pred_samples)))
         
         print(f"CFProto: Model prediction distribution: {dict(zip(unique_preds, pred_counts))}")
         print(f"CFProto: Dynamic 'k' set to {self.safe_k} based on smallest predicted bucket.")
@@ -98,20 +99,19 @@ class CFProto(Explainer):
 
         shape = (1,) + data.data.shape[1:]
         self.cf = CounterfactualProto(
-            # TODO: remove this when we switch to a binary problem (not smiling -> smiling)
-            lambda x: model.predict_proba(x)[:, :2],
+            lambda x: model.predict_proba(x),
             shape,
             kappa=0.,
             beta=.1, # Increase to heavily penalize changes.
             gamma=100.,
             theta=100.,
-            max_iterations=500,
+            max_iterations=1000,
             feature_range=(feature_range_mins, feature_range_maxs),
             cat_vars=cat_vars_dict,
             ohe=is_ohe,
             use_kdtree=True,
             c_init=1.,
-            c_steps=5,
+            c_steps=2,
             learning_rate_init=1e-2,
             clip=(-1000., 1000.))
         
@@ -119,12 +119,16 @@ class CFProto(Explainer):
 
     def explain(self, model: Model, data: Dataset) -> list[Counterfactual]:
         cfs = list()
-        for instance in data.data:
+
+        for i, instance in enumerate(data.data):
+            instance_class = data.target[i] if data.target is not None else model.predict(np.expand_dims(instance, axis=0))[0]
+            other_classes = [cls for cls in self.available_classes if cls != instance_class]
+
             explanation = self.cf.explain(
                 np.expand_dims(instance, axis=0),
                 Y=None,
-                target_class=None,
-                k=self.safe_k, 
+                target_class=other_classes,
+                k=self.safe_k,
                 k_type='mean',
                 threshold=0.,
                 verbose=True,
@@ -132,22 +136,14 @@ class CFProto(Explainer):
                 log_every=100)
             
             if explanation.cf is not None:
-                orig_class_raw = explanation.orig_class
-                target_class_raw = explanation.cf["class"]
-                
-                if hasattr(orig_class_raw, 'item'): c_orig = orig_class_raw.item()
-                elif isinstance(orig_class_raw, np.ndarray): c_orig = int(orig_class_raw.flatten()[0])
-                else: c_orig = int(orig_class_raw)
-
-                if hasattr(target_class_raw, 'item'): c_target = target_class_raw.item()
-                elif isinstance(target_class_raw, np.ndarray): c_target = int(target_class_raw.flatten()[0])
-                else: c_target = int(target_class_raw)
+                cf_data = explanation.cf["X"][0]
+                cf_class = model.predict(np.expand_dims(cf_data, axis=0))[0]
 
                 cfs.append(Counterfactual(
                     instance,
-                    explanation.cf["X"][0],
-                    c_orig,
-                    c_target,
+                    cf_data,
+                    instance_class,
+                    cf_class,
                     repr(self)
                 ))
         return cfs
