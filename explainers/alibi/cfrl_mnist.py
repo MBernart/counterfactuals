@@ -93,10 +93,10 @@ class CFRLMNIST(Explainer):
     def __init__(
         self,
         latent_dim=32,
-        coeff_sparsity=7.5,
-        coeff_consistency=0.0,
+        coeff_sparsity=15.0,
+        coeff_consistency=0.5,
         train_steps=50_000,
-        batch_size=32,
+        batch_size=128,
     ):
         self.latent_dim = latent_dim
         self.coeff_sparsity = coeff_sparsity
