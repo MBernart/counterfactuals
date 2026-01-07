@@ -109,3 +109,11 @@ class AlibiCFProto(CeleryExplainer):
 class AlibiCFRL(CeleryExplainer):
     def __init__(self):
         super().__init__("alibi_cfrl")
+
+class AlibiCFRLCelebA(CeleryExplainer):
+    def __init__(self):
+        super().__init__("alibi_cfrl_celeba")
+        
+class AlibiCFRLMNIST(CeleryExplainer):
+    def __init__(self):
+        super().__init__("alibi_cfrl_mnist")

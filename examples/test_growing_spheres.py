@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 from ucimlrepo import fetch_ucirepo
 from explainers_lib.datasets import Dataset
-from explainers_lib.explainers.growing_spheres import GrowingSpheresExplainer
+from explainers_lib.explainers.native.growing_spheres import GrowingSpheresExplainer
 from explainers_lib.model import TorchModel
 from explainers_lib.ensemble import print_cfs
 

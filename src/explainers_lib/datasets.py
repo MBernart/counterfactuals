@@ -30,18 +30,13 @@ class Dataset:
         self.features             = features
         self.immutable_features   = immutable_features
 
-        self.categorical_features = categorical_features
         self.categorical_values   = categorical_values
 
-        self.continuous_features  = continuous_features
         self.allowable_ranges     = allowable_ranges
 
-        self._ensure_features()
+        self._ensure_features(categorical_features, continuous_features)
         self._fill_categorical_values()
         self._fill_allowable_ranges()
-
-        self.categorical_features.sort(key=self.features.index)
-        self.continuous_features.sort(key=self.features.index)
 
         self.categorical_features_ids = [self.features.index(f) for f in self.categorical_features]
         self.continuous_features_ids  = [self.features.index(f) for f in self.continuous_features]
@@ -54,9 +49,9 @@ class Dataset:
             self.preprocessor = preprocessor
             self.data: np.ndarray = self.preprocessor.transform(self.df)
 
-    def _ensure_features(self):
-        cat_features = set(self.categorical_features)
-        num_features = set(self.continuous_features)
+    def _ensure_features(self, categorical_features, continuous_features):
+        cat_features = set(categorical_features)
+        num_features = set(continuous_features)
         immutable_features = set(self.immutable_features)
         all_processing_features = cat_features.union(num_features)
         overlapping_cat_num = cat_features.intersection(num_features)
@@ -66,6 +61,9 @@ class Dataset:
             self.features = list(all_features)
         else:
             all_features = set(self.features)
+
+        self.categorical_features = [f for f in categorical_features if f in self.features]
+        self.continuous_features  = [f for f in continuous_features if f in self.features]
 
         assert all_features != set(), (
             "No features were defined. Please provide 'features' or "
@@ -210,7 +208,7 @@ class Dataset:
 
     def like(self, data: np.ndarray, target: np.ndarray) -> "Dataset":
         return Dataset(
-            self.inverse_transform(data),
+            self.inverse_transform(data),  # must implement Identity trasformation case handling for inverse function
             target,
             self.features,
             immutable_features=self.immutable_features,
