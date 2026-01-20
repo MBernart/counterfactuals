@@ -1,0 +1,59 @@
+@startuml
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+autonumber
+
+actor "User" as User
+participant "Ensemble" as Ens
+participant "Message Broker" as Redis
+participant "Remote Explainer" as Worker
+participant "Local Explainer" as Local
+participant "Selector" as Agg
+
+User -> Ens: explain(X)
+activate Ens
+
+group Distributed Asynchronous Execution
+    Ens -> Ens: Serialize Model & Dataset
+    Ens -> Redis: Push Tasks
+    activate Redis
+    Redis -> Worker: Dispatch Task
+    activate Worker
+    note right of Worker: Deserialize Model\nDeserialize Dataset\nRun Explainer\nSerialize Result
+    ' Worker -> Worker: Deserialize Model & Dataset
+    ' activate Local
+    ' Worker -> Local: Run Explainer
+    ' Local -> Worker: Return Counterfactuals
+    ' deactivate Local 
+end
+
+group Local Execution
+    loop for each local explainer
+        Ens -> Local: Run Explainer
+        activate Local
+        Local --> Ens: Return Counterfactuals
+        deactivate Local
+    end
+end
+
+Worker --> Redis: Return Serialized Results
+deactivate Worker
+
+Ens -> Redis: Fetch Results
+Redis --> Ens: Return Remote Counterfactuals
+deactivate Redis
+
+Ens -> Ens: Deserialize Remote Counterfactuals
+
+group Selection
+    loop for each X<sub>i</sub>
+    Ens -> Agg: Run Selector
+    activate Agg
+    Agg --> Ens: Return Selected Counterfactuals
+    deactivate Agg
+    end
+end
+
+Ens --> User: Return Counterfactuals
+deactivate Ens
+@enduml
