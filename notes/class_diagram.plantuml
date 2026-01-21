@@ -1,0 +1,85 @@
+@startuml
+
+' --- STYLING ---
+skinparam linetype ortho
+skinparam nodesep 100
+skinparam ranksep 60
+skinparam roundCorner 10
+skinparam shadowing true
+skinparam classAttributeIconSize 0
+
+skinparam class {
+    BackgroundColor White
+    BorderColor #333333
+    ArrowColor #333333
+    HeaderBackgroundColor #F9F9F9
+}
+
+' Style for the relationship labels (gray background)
+skinparam arrowMessageAlignment center
+<style>
+arrow {
+    FontSize 11
+    Padding 3
+    Margin 3
+    BackgroundColor #EFEFEF
+}
+</style>
+
+' --- CLASSES ---
+
+class Ensemble {
+    + fit(X, y)
+    + explain(instance) : List<Counterfactual>
+}
+
+interface Selector <<Interface>> {
+    + select(counterfactuals, original_instance)
+}
+
+interface Explainer <<Interface>> {
+    + fit(dataset, model)
+    + explain(instance)
+}
+
+class Dataset {
+    - DataFrame dataframe
+    - ColumnTransformer preprocessor
+    - dict metadata
+    + inverse_transform(vector)
+}
+
+interface Model <<Interface>> {
+    + predict(instance)
+}
+
+' --- RELATIONSHIPS ---
+
+' Main Ensemble Connections (Top Down)
+Ensemble "1" --> "1" Selector : Uses
+Ensemble "1" *-- "1..*" Explainer : Aggregates
+Ensemble "1" --> "1" Dataset : Uses
+Ensemble "1" --> "1" Model : Uses
+
+' Cross Connections (Dotted)
+Selector .down.> Explainer : Filters output of
+Explainer .down.> Dataset : Reads constraints
+Explainer .down.> Model : Optimizes against
+
+' --- LAYOUT HELPERS ---
+' Force Ensemble to be above Selector
+Ensemble -[hidden]down- Selector
+
+' Force Explainer to be Left of Selector
+Explainer -[hidden]right- Selector
+
+' Force Dataset and Model to be on same level
+Dataset -[hidden]right- Model
+
+' Force Dataset to be below Explainer
+Explainer -[hidden]down- Dataset
+
+' Force Model to be below Selector
+Selector -[hidden]down- Model
+
+@enduml
