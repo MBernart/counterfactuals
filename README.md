@@ -160,7 +160,3 @@ cfs = ensemble.explain(data[:5],
                        pretty_print_postprocess_target=label_encoder.inverse_transform)
 print(f"Number of generated cfs: {len(cfs)}")
 ```
-
-## License
-
-This project is licensed under the MIT License.
