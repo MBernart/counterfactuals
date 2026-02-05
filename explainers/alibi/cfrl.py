@@ -25,7 +25,7 @@ class ListOutputModel(tf.keras.Model):
         return {"model": self.model}
 
 class CFRL(Explainer):
-    def __init__(self, latent_dim=8, coeff_sparsity=0.5, coeff_consistency=0.5, train_steps=1000, batch_size=10):
+    def __init__(self, latent_dim=8, coeff_sparsity=0.5, coeff_consistency=0.5, train_steps=100000, batch_size=64):
         self.coeff_sparsity = coeff_sparsity
         self.coeff_consistency = coeff_consistency
         self.train_steps = train_steps
@@ -93,7 +93,7 @@ class CFRL(Explainer):
 
         autoencoder.compile(optimizer='adam', loss=losses)
         
-        autoencoder.fit(data.data, y_train_list, epochs=100, batch_size=16, verbose=True)
+        autoencoder.fit(data.data, y_train_list, epochs=2000, batch_size=64, verbose=True)
 
         if len(decoder_outputs) == 1:
             decoder_for_alibi = ListOutputModel(decoder)
@@ -155,7 +155,7 @@ class CFRL(Explainer):
             
             Y_t = np.array([desired_target])
 
-            explanation = self.explainer.explain(X=instance_df, Y_t=Y_t, C=[], patience=10000)
+            explanation = self.explainer.explain(X=instance_df, Y_t=Y_t, C=[], patience=20000)
             
             if explanation.cf is not None:
                 instance_orig_preprocessed = data.preprocessor.transform(explanation.orig['X']).ravel()

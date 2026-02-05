@@ -171,7 +171,7 @@ def load_titanic_data():
         
         # Consistent split
         from sklearn.model_selection import train_test_split
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.99, random_state=42)
         
         ds = Dataset(X_test, y_test.values, X_test.columns.tolist(), categorical_features=categorical_features, continuous_features=numerical_features)
         return ds
@@ -220,7 +220,7 @@ def configure_explainers():
             num_cfs = IntPrompt.ask(f"[{name}] Num CFs", default=8)
             explainers.append(cls(num_cfs=num_cfs))
         elif name == "WachterExplainer":
-             explainers.append(cls(lambda_param=[0.1, 0.5, 1, 5, 10, 50, 100]))
+             explainers.append(cls(lambda_param=[0.1, 0.5, 1, 5, 10, 50, 100, 200, 500]))
         elif name == "FaceExplainer":
              explainers.append(cls(fraction=1.0))
         else:

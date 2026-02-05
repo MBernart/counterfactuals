@@ -34,7 +34,7 @@ class CFProto(Explainer):
         else:
             min_pred_samples = 0
 
-        self.safe_k = int(max(1, min(20, min_pred_samples)))
+        self.safe_k = int(max(1, min(30, min_pred_samples)))
         
         print(f"CFProto: Model prediction distribution: {dict(zip(unique_preds, pred_counts))}")
         print(f"CFProto: Dynamic 'k' set to {self.safe_k} based on smallest predicted bucket.")
@@ -151,7 +151,7 @@ class CFProto(Explainer):
         return cfs
 
     def __repr__(self) -> str:
-        return "cfproto()" # TODO: make the hyperparameters configurable
+        return f"cfproto(k={self.safe_k})" # TODO: make the hyperparameters configurable
 
 explainer = CFProto()
 create_celery_tasks(explainer, "alibi_cfproto")
