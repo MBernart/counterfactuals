@@ -49,7 +49,7 @@ class Ensemble:
         for explainer in self.explainers:
             explainer.fit(self.model, data)
 
-        if isinstance(self.aggregator, ScoreBasedAggregator):
+        if hasattr(self.aggregator, "fit"):
             self.aggregator.fit(self.model, data)
 
         if task:
@@ -57,6 +57,7 @@ class Ensemble:
 
     def explain(self,
                 data: Dataset,
+                include_scores: bool = False,
                 pretty_print: bool = False,
                 pretty_print_postprocess: Optional[Postprocessor] = None,
                 pretty_print_postprocess_target: Optional[Postprocessor] = None,
@@ -82,7 +83,7 @@ class Ensemble:
 
         all_filtered_counterfactuals = list()
         for cfs in cfs_group_by_original_data(all_counterfactuals).values():
-            filtered_counterfactuals = self.aggregator(cfs)
+            filtered_counterfactuals = self.aggregator(cfs, include_scores=include_scores)
             all_filtered_counterfactuals.extend(filtered_counterfactuals)
         
         if pretty_print:

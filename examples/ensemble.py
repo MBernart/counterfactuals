@@ -68,15 +68,15 @@ ensemble = Ensemble(
         # Native
         WachterExplainer(),
         GrowingSpheresExplainer(),
-        FaceExplainer(),
+        # FaceExplainer(),
         # Carla
         # TODO(patryk): currently broken, but I am working on it! 
         # ActionableRecourseExplainer(),
         # Dice
-        DiceExplainer(),
+        # DiceExplainer(),
         # Alibi
-        AlibiCFProto(),
-        AlibiCFRL()
+        # AlibiCFProto(),
+        # AlibiCFRL()
     ],
     Pareto())
 print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
@@ -85,7 +85,41 @@ ensemble.fit(data)
 print(f"Ensemble fitting complete")
 
 cfs = ensemble.explain(data[:5],
+                       include_scores=True,
                        pretty_print=True,
                        pretty_print_postprocess=data.inverse_transform,
                        pretty_print_postprocess_target=label_encoder.inverse_transform)
 print(f"Number of generated cfs: {len(cfs)}")
+
+# Print scores table
+from rich.console import Console
+from rich.table import Table
+
+console = Console()
+table = Table(title="Counterfactual Scores")
+
+table.add_column("Explainer", justify="left", style="cyan")
+table.add_column("Target Class", justify="center", style="magenta")
+table.add_column("Proximity", justify="right", style="green")
+table.add_column("Feasibility", justify="right", style="green")
+table.add_column("Discriminative Power", justify="right", style="green")
+
+for cf in cfs:
+    scores = cf.metadata.get("scores", {})
+    # Note: Column names in scores depend on k_neighbors params, but usually they are:
+    # 'Proximity', 'K_Feasibility(3)', 'DiscriminativePower(9)' (defaults)
+    
+    # Let's find the feasibility and discriminative power keys dynamically if possible, 
+    # or just assume defaults for this example.
+    feas_key = next((k for k in scores.keys() if "Feasibility" in k), "N/A")
+    disc_key = next((k for k in scores.keys() if "DiscriminativePower" in k), "N/A")
+    
+    table.add_row(
+        cf.explainer,
+        str(cf.target_class),
+        f"{scores.get('Proximity', 0):.4f}",
+        f"{scores.get(feas_key, 0):.4f}" if feas_key != "N/A" else "N/A",
+        f"{scores.get(disc_key, 0):.4f}" if disc_key != "N/A" else "N/A"
+    )
+
+console.print(table)

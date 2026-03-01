@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import io
 import numpy as np
 import pickle
@@ -19,6 +19,7 @@ class Counterfactual:
     original_class: ClassLabel
     target_class: ClassLabel
     explainer: str
+    metadata: dict = field(default_factory=dict)
 
     @staticmethod
     def _array_to_bytes(arr: np.ndarray) -> bytes:
@@ -40,6 +41,7 @@ class Counterfactual:
             "original_class": self.original_class,
             "target_class": self.target_class,
             "explainer": self.explainer,
+            "metadata": self.metadata,
         }, protocol=4)
 
     @staticmethod
@@ -50,5 +52,6 @@ class Counterfactual:
             data = Counterfactual._bytes_to_array(state["data"]),
             original_class = state["original_class"],
             target_class = state["target_class"],
-            explainer = state["explainer"]
+            explainer = state["explainer"],
+            metadata = state.get("metadata", {})
         )
