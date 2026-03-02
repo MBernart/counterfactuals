@@ -1,9 +1,8 @@
 {
 	"name": "Counterfactuals Dev Environment",
-	"image": "mcr.microsoft.com/devcontainers/python:3.10",
-	"features": {
-		"ghcr.io/devcontainers/features/redis:1": {}
-	},
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/counterfactuals",
 	"customizations": {
 		"vscode": {
 			"extensions": [
