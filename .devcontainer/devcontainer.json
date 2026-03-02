@@ -1,0 +1,17 @@
+{
+	"name": "Counterfactuals Dev Environment",
+	"image": "mcr.microsoft.com/devcontainers/python:3.10",
+	"features": {
+		"ghcr.io/devcontainers/features/redis:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance"
+			]
+		}
+	},
+	"postCreateCommand": "bash .devcontainer/setup_envs.sh",
+	"remoteUser": "vscode"
+}
