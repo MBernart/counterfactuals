@@ -25,6 +25,7 @@ class FaceExplainer(Explainer):
         fraction: float = 1.0,
         desired_class: Optional[int] = None,
         n_neighbors: int = 50,
+        k: int = 1,
     ):
         """
         Args:
@@ -32,11 +33,13 @@ class FaceExplainer(Explainer):
             fraction: Fraction of data to construct neighborhood graph.
             desired_class: Desired output class for generated counterfactuals.
             n_neighbors: Number of neighbors for kNN search.
+            k: Number of counterfactuals to generate per instance.
         """
         self.mode = mode
         self.fraction = fraction
         self.desired_class = desired_class
         self.n_neighbors = n_neighbors
+        self.k = k
         self.model = None
         
         self.X = None
@@ -116,20 +119,24 @@ class FaceExplainer(Explainer):
 
         for i in tqdm(range(len(df)), unit="instance"):
             instance_df = df.iloc[[i]]
-            cf = self._generate_cf(instance_df, model, y_target)
-            if cf is not None:
-                counterfactuals.append(cf)
+            cfs = self._generate_cf(instance_df, model, y_target)
+            if len(cfs) > 0:
+                counterfactuals.extend(cfs)
 
         return counterfactuals
 
     def explain_instance(
         self, instance_ds: Dataset, model: Model, target_class: Optional[int] = None
     ) -> Optional[Counterfactual]:
+        """
+        Generate counterfactual for a single instance.
+        """
+        raise NotImplementedError("Since this method now is able to return multiple counterfactuals per instance, the return type of this method needs to be changed to be implemented propely")
         instance_df = pd.DataFrame(instance_ds.data, columns=self.transformed_feature_names)
         target = target_class or self.desired_class or 1
         return self._generate_cf(instance_df, model, target)
 
-    def _generate_cf(self, instance_df: pd.DataFrame, model: Model, target_class: int) -> Optional[Counterfactual]:
+    def _generate_cf(self, instance_df: pd.DataFrame, model: Model, target_class: int) -> List[Counterfactual]:
         """
         Helper to generate a single counterfactual using the true FACE approach (shortest path on manifold).
         """
@@ -143,7 +150,7 @@ class FaceExplainer(Explainer):
             pred_orig = np.argmax(pred_probs)
             
             if pred_orig == target_class:
-                return None
+                return []
 
             # 1. Find the Nearest Node in the Training Graph (Source Node for Dijkstra)
             # This is necessary because the input 'instance' is usually not one of the graph nodes (self.X_graph)
@@ -169,32 +176,30 @@ class FaceExplainer(Explainer):
             target_indices = np.where(target_mask)[0]
             
             if len(target_indices) == 0:
-                return None
+                return []
 
-            # 4. Find the Closest Node in the Target Class on the Manifold
-            min_geodesic_distance = np.inf
-            best_candidate_index = -1
+            # 4. Find the Top-K Closest Nodes in the Target Class on the Manifold
+            candidates = [
+                (geodesic_distances[idx], idx) 
+                for idx in target_indices 
+                if not np.isinf(geodesic_distances[idx])
+            ]
             
-            for idx in target_indices:
-                dist = geodesic_distances[idx]
-                if dist < min_geodesic_distance:
-                    min_geodesic_distance = dist
-                    best_candidate_index = idx
-                    
-            if best_candidate_index == -1 or np.isinf(min_geodesic_distance):
-                return None
-            
-            # 5. Select the Best Counterfactual
-            candidate_cf = self.X_graph[best_candidate_index]
+            if not candidates:
+                return []
 
-            return Counterfactual(
+            candidates.sort(key=lambda x: x[0])            
+            best_idxs = [idx for dist, idx in candidates[:self.k]]
+            
+            # 5. Select k-Best Counterfactuals
+            return list(map(lambda idx: Counterfactual(
                 original_data=instance,
-                data=candidate_cf,
+                data=self.X_graph[idx],
                 original_class=pred_orig,
                 target_class=target_class,
                 explainer=repr(self),
-            )
+            ), best_idxs))
 
         except Exception as e:
             print(f"[WARN] FACE failed for instance: {e}")
-            return None
+            return []
