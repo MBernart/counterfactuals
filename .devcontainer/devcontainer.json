@@ -1,8 +1,6 @@
 {
-	"name": "Counterfactuals Dev Environment",
-	"dockerComposeFile": "docker-compose.yml",
-	"service": "app",
-	"workspaceFolder": "/workspaces/counterfactuals",
+	"name": "Counterfactuals (Natives Only)",
+	"image": "mcr.microsoft.com/devcontainers/python:3.10",
 	"customizations": {
 		"vscode": {
 			"extensions": [
