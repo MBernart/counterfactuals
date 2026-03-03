@@ -244,8 +244,8 @@ class ParetoMeanPoint(ScoreBasedAggregator):
         scores = self.calculate_scores(cfs)
 
         x_metric = "Proximity"
-        y_metric = "K_Feasibility(3)"
-        z_metric = "DiscriminativePower(9)"
+        y_metric = f"K_Feasibility({self.k_neigh_feasibility})"
+        z_metric = f"DiscriminativePower({self.k_neigh_discriminative})"
         optimization_direction = ["min", "min", "max"]
 
         all_x = scores[x_metric].to_numpy()
