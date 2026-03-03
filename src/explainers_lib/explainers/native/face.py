@@ -54,7 +54,7 @@ class FaceExplainer(Explainer):
         self.adjacency_matrix = None # The sparse graph for shortest path search
 
     def __repr__(self):
-        return f"face_explainer(mode={self.mode}, fraction={self.fraction}, n_neighbors={self.n_neighbors})"
+        return f"face_explainer(mode={self.mode}, fraction={self.fraction}, n_neighbors={self.n_neighbors}, k={self.k})"
 
     def fit(self, model: Model, data: Dataset):
         """
