@@ -7,13 +7,14 @@ from explainers_lib.model import Model
 
 
 class GrowingSpheresExplainer(Explainer):
-    def __init__(self, step_size=0.1, max_radius=5.0, num_samples=1000):
+    def __init__(self, step_size=0.1, max_radius=5.0, num_samples=1000, k=1):
         self.step_size = step_size
         self.max_radius = max_radius
         self.num_samples = num_samples
+        self.k = k
 
     def __repr__(self) -> str:
-        return f"growing_spheres(step_size={repr(self.step_size)}, max_radius={repr(self.max_radius)}, num_samples={repr(self.num_samples)})"
+        return f"growing_spheres(step_size={repr(self.step_size)}, max_radius={repr(self.max_radius)}, num_samples={repr(self.num_samples)}, k={repr(self.k)})"
 
     def fit(self, model: Model, data: Dataset) -> None:
         # No fitting needed for Growing Spheres
@@ -33,13 +34,10 @@ class GrowingSpheresExplainer(Explainer):
             if y_desired == original_class:
                 continue
 
-            try:
-                cf = self._generate_counterfactual(
-                    instance, model, y_desired, original_class
-                )
-                counterfactuals.append(cf)
-            except ValueError:
-                continue  # Try next target class
+            cfs = self._generate_counterfactual(
+                instance, model, y_desired, original_class
+            )
+            counterfactuals.extend(cfs)
 
         return counterfactuals
 
@@ -49,7 +47,7 @@ class GrowingSpheresExplainer(Explainer):
         model: Model,
         target_class: int,
         original_class: int,
-    ) -> Counterfactual:
+    ) -> list[Counterfactual]:
         radius = self.step_size
         instance = instance_ds.data[0]
         dim = instance.shape[0]
@@ -88,7 +86,8 @@ class GrowingSpheresExplainer(Explainer):
                     end = start + n_cats_per_feature[idx_in_cat_list]
                     immutable_transformed_indices.extend(range(start, end))
 
-        while radius <= self.max_radius:
+        result: list[Counterfactual] = []
+        while radius <= self.max_radius and len(result) < self.k:
             directions = np.random.random((self.num_samples, dim))
             norm = np.linalg.norm(directions, axis=1, keepdims=True)
             norm[norm == 0] = 1e-9
@@ -118,14 +117,22 @@ class GrowingSpheresExplainer(Explainer):
                 candidates = instance_ds.preprocessor.transform(df_candidates)
 
             # Get predictions for all candidates
-            pred_classes = model.predict(candidates)
+            pred_classes = np.asarray(model.predict(candidates))
 
-            for i, pred_class in enumerate(pred_classes):
-                if (pred_class != original_class) and ((target_class is None) or (target_class == pred_class)):
-                    return Counterfactual(
-                        instance, candidates[i], original_class, pred_class, repr(self)
-                    )
+            mask = pred_classes != original_class
+            if target_class is not None:
+                mask &= (pred_classes == target_class)
+
+            valid_indices = np.where(mask)[0]
+            needed = self.k - len(result)
+
+            result.extend([
+                Counterfactual(
+                    instance, candidates[i], original_class, pred_classes[i], repr(self)
+                )
+                for i in valid_indices[:needed]
+            ])
 
             radius += self.step_size
 
-        raise ValueError("No counterfactual found within max radius.")
+        return result
