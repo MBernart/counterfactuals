@@ -269,6 +269,59 @@ class BalancedPoint(ScoreBasedAggregator):
         return selected_cfs
 
 
+class ParetoMeanPoint(ScoreBasedAggregator):
+    """
+    Selects a single counterfactual from the Pareto front that is closest
+    to the mean (or median) of all points on the Pareto front.
+    """
+
+    def __init__(self, metric: str = "mean", k_neigh_feasibility=3, k_neigh_discriminative=9):
+        super().__init__(
+            k_neigh_feasibility=k_neigh_feasibility,
+            k_neigh_discriminative=k_neigh_discriminative,
+        )
+        self.metric = metric
+
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+        if not cfs:
+            return []
+
+        scores = self.calculate_scores(cfs)
+
+        x_metric = "Proximity"
+        y_metric = f"K_Feasibility({self.k_neigh_feasibility})"
+        z_metric = f"DiscriminativePower({self.k_neigh_discriminative})"
+        optimization_direction = ["min", "min", "max"]
+
+        all_x = scores[x_metric].to_numpy()
+        all_y = scores[y_metric].to_numpy()
+        all_z = scores[z_metric].to_numpy()
+        to_check = np.array([all_x, all_y, all_z], dtype=np.float64).T
+
+        pareto_mask = get_pareto_optimal_mask(
+            data=to_check, optimization_direction=optimization_direction
+        ).astype(bool)
+
+        pareto_indices = np.where(pareto_mask)[0]
+        if len(pareto_indices) == 0:
+            return []
+
+        pareto_cfs = [cfs[i] for i in pareto_indices]
+        pareto_data = to_check[pareto_mask]
+
+        if self.metric == "mean":
+            center_point = np.mean(pareto_data, axis=0)
+        elif self.metric == "median":
+            center_point = np.median(pareto_data, axis=0)
+        else:
+            raise ValueError(f"Unknown metric: {self.metric}. Use 'mean' or 'median'.")
+
+        dists = np.linalg.norm(pareto_data - center_point, axis=1)
+        best_idx = np.argmin(dists)
+
+        return [pareto_cfs[best_idx]]
+
+
 class TOPSIS(ScoreBasedAggregator):
     """
     Selects the top-k counterfactuals using the TOPSIS

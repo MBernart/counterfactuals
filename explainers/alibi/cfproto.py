@@ -17,9 +17,10 @@ from explainers_lib import Explainer, Dataset, Model, Counterfactual
 
 # note: This explainer does not support immutable features
 class CFProto(Explainer):
-    def __init__(self):
+    def __init__(self, k=1):
         self.cf = None
         self.safe_k = 1 # Fallback
+        self.k = k
 
     def fit(self, model: Model, data: Dataset) -> None:
         print(f"CFProto: Fitting on {len(data.data)} samples.")
@@ -136,20 +137,47 @@ class CFProto(Explainer):
                 log_every=100)
             
             if explanation.cf is not None:
-                cf_data = explanation.cf["X"][0]
-                cf_class = model.predict(np.expand_dims(cf_data, axis=0))[0]
+                best_cf_data = explanation.cf["X"]
+                
+                unique_cfs = [best_cf_data]
+                seen_hashes = {best_cf_data.tobytes()}
+                
+                if self.k > 1 and explanation.all:
+                    all_found_cfs = []
+                    for iteration, cfs_in_iter in explanation.all.items():
+                        all_found_cfs.extend(cfs_in_iter)
+                    
+                    # Sort runners-up by L1 distance to the original instance
+                    sorted_cfs = sorted(
+                        all_found_cfs, 
+                        key=lambda c: np.linalg.norm(c.flatten() - instance.flatten(), ord=1)
+                    )
+                    
+                    for c in sorted_cfs:
+                        if len(unique_cfs) >= self.k:
+                            break
+                            
+                        cf_bytes = c.tobytes()
+                        if cf_bytes not in seen_hashes:
+                            seen_hashes.add(cf_bytes)
+                            unique_cfs.append(c)
 
-                cfs.append(Counterfactual(
-                    instance,
-                    cf_data,
-                    instance_class,
-                    cf_class,
-                    repr(self)
-                ))
+                for cf_data_array in unique_cfs:
+                    cf_data_flat = cf_data_array[0]
+                    cf_class = model.predict(np.expand_dims(cf_data_flat, axis=0))[0]
+
+                    cfs.append(Counterfactual(
+                        instance,
+                        cf_data_flat,
+                        instance_class,
+                        cf_class,
+                        repr(self)
+                    ))
+
         return cfs
 
     def __repr__(self) -> str:
-        return "cfproto()" # TODO: make the hyperparameters configurable
+        return f"cfproto(k={repr(self.k)})" # TODO: make the hyperparameters configurable
 
 explainer = CFProto()
 create_celery_tasks(explainer, "alibi_cfproto")
