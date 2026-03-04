@@ -282,7 +282,7 @@ class ParetoMeanPoint(ScoreBasedAggregator):
         )
         self.metric = metric
 
-    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
         if not cfs:
             return []
 
@@ -317,9 +317,15 @@ class ParetoMeanPoint(ScoreBasedAggregator):
             raise ValueError(f"Unknown metric: {self.metric}. Use 'mean' or 'median'.")
 
         dists = np.linalg.norm(pareto_data - center_point, axis=1)
-        best_idx = np.argmin(dists)
+        best_pareto_idx = np.argmin(dists)
+        best_idx = pareto_indices[best_pareto_idx]
 
-        return [pareto_cfs[best_idx]]
+        selected_cfs = [cfs[best_idx]]
+
+        if include_scores:
+            selected_cfs[0].metadata["scores"] = scores.iloc[best_idx].to_dict()
+
+        return selected_cfs
 
 
 class TOPSIS(ScoreBasedAggregator):
