@@ -31,10 +31,17 @@ class AggregatorBase(ABC):
         self.data = data
         self.train_preds = self.model.predict(self.data)
 
-    def calculate_scores(self, cfs: List[Counterfactual], k_neighbors_feasib: int = 3, k_neighbors_discriminative: int = 9) -> pd.DataFrame:
+    def calculate_scores(
+        self,
+        cfs: List[Counterfactual],
+        k_neighbors_feasib: int = 3,
+        k_neighbors_discriminative: int = 9,
+    ) -> pd.DataFrame:
         """Calculates the standard scores for a list of counterfactuals."""
         if self.model is None or self.data is None:
-            raise RuntimeError("Aggregator must be fitted before calculating scores. Call fit(model, data) first.")
+            raise RuntimeError(
+                "Aggregator must be fitted before calculating scores. Call fit(model, data) first."
+            )
 
         cfs_data_ohe = np.array([cf.data for cf in cfs])
         cfs_df_raw = self.data.inverse_transform(cfs_data_ohe)
@@ -43,14 +50,18 @@ class AggregatorBase(ABC):
         # note: must be 2D (1, N) because scores.py slices it like x[:, indices]
         original_data_ohe = cfs[0].original_data.reshape(1, -1)
         original_df_raw = self.data.inverse_transform(original_data_ohe)
-        original_data_raw = original_df_raw.to_numpy() 
+        original_data_raw = original_df_raw.to_numpy()
 
         training_data_raw = self.data.df.to_numpy()
 
         feature_names = self.data.features
-        
-        cont_indices = [feature_names.index(col) for col in self.data.continuous_features]
-        cat_indices = [feature_names.index(col) for col in self.data.categorical_features]
+
+        cont_indices = [
+            feature_names.index(col) for col in self.data.continuous_features
+        ]
+        cat_indices = [
+            feature_names.index(col) for col in self.data.categorical_features
+        ]
 
         cfs_target = np.array([cf.target_class for cf in cfs])
 
@@ -66,13 +77,8 @@ class AggregatorBase(ABC):
             k_neighbors_discriminative=k_neighbors_discriminative,
         ).reset_index(drop=True)
 
-    def _attach_scores(self, cfs: List[Counterfactual], scores: pd.DataFrame):
-        """Helper to attach diagnostics scores to counterfactual metadata."""
-        for i, cf in enumerate(cfs):
-            cf.metadata["scores"] = scores.iloc[i].to_dict()
-
     @abstractmethod
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         pass
 
 
@@ -90,13 +96,13 @@ class ScoreBasedAggregator(AggregatorBase):
     def calculate_scores(self, cfs: List[Counterfactual]) -> pd.DataFrame:
         """Calculates the standard scores using instance parameters."""
         return super().calculate_scores(
-            cfs, 
-            k_neighbors_feasib=self.k_neigh_feasibility, 
-            k_neighbors_discriminative=self.k_neigh_discriminative
+            cfs,
+            k_neighbors_feasib=self.k_neigh_feasibility,
+            k_neighbors_discriminative=self.k_neigh_discriminative,
         )
 
     @abstractmethod
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         pass
 
 
@@ -109,10 +115,10 @@ class Pareto(ScoreBasedAggregator):
             k_neigh_discriminative=k_neigh_discriminative,
         )
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs:
             return []
-            
+
         scores = self.calculate_scores(cfs)
 
         # Example: return all Pareto-efficient counterfactuals
@@ -132,11 +138,6 @@ class Pareto(ScoreBasedAggregator):
 
         pareto_indices = np.where(pareto_mask)[0]
         selected_cfs = [cfs[i] for i in pareto_indices]
-
-        if include_scores:
-            # Attach scores to the selected counterfactuals
-            for i, idx in enumerate(pareto_indices):
-                selected_cfs[i].metadata["scores"] = scores.iloc[idx].to_dict()
 
         return selected_cfs
 
@@ -160,7 +161,7 @@ class IdealPoint(ScoreBasedAggregator):
         )
         self.weights = weights
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs:
             return []
 
@@ -198,11 +199,8 @@ class IdealPoint(ScoreBasedAggregator):
         # pick closest
         best_pareto_idx = np.argmin(dists)
         best_idx = pareto_indices[best_pareto_idx]
-        
-        selected_cfs = [cfs[best_idx]]
 
-        if include_scores:
-            selected_cfs[0].metadata["scores"] = scores.iloc[best_idx].to_dict()
+        selected_cfs = [cfs[best_idx]]
 
         return selected_cfs
 
@@ -219,7 +217,7 @@ class BalancedPoint(ScoreBasedAggregator):
             k_neigh_discriminative=k_neigh_discriminative,
         )
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs:
             return []
 
@@ -263,9 +261,6 @@ class BalancedPoint(ScoreBasedAggregator):
 
         selected_cfs = [cfs[best_idx]]
 
-        if include_scores:
-            selected_cfs[0].metadata["scores"] = scores.iloc[best_idx].to_dict()
-
         return selected_cfs
 
 
@@ -275,14 +270,16 @@ class ParetoMeanPoint(ScoreBasedAggregator):
     to the mean (or median) of all points on the Pareto front.
     """
 
-    def __init__(self, metric: str = "mean", k_neigh_feasibility=3, k_neigh_discriminative=9):
+    def __init__(
+        self, metric: str = "mean", k_neigh_feasibility=3, k_neigh_discriminative=9
+    ):
         super().__init__(
             k_neigh_feasibility=k_neigh_feasibility,
             k_neigh_discriminative=k_neigh_discriminative,
         )
         self.metric = metric
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs:
             return []
 
@@ -306,7 +303,6 @@ class ParetoMeanPoint(ScoreBasedAggregator):
         if len(pareto_indices) == 0:
             return []
 
-        pareto_cfs = [cfs[i] for i in pareto_indices]
         pareto_data = to_check[pareto_mask]
 
         if self.metric == "mean":
@@ -321,9 +317,6 @@ class ParetoMeanPoint(ScoreBasedAggregator):
         best_idx = pareto_indices[best_pareto_idx]
 
         selected_cfs = [cfs[best_idx]]
-
-        if include_scores:
-            selected_cfs[0].metadata["scores"] = scores.iloc[best_idx].to_dict()
 
         return selected_cfs
 
@@ -354,7 +347,7 @@ class TOPSIS(ScoreBasedAggregator):
         self.weights = None
         self.k = k
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs or len(cfs) < 1:
             return []
 
@@ -411,17 +404,15 @@ class TOPSIS(ScoreBasedAggregator):
 
         selected_cfs = [cfs[i] for i in top_k_indices]
 
-        if include_scores:
-            for i, idx in enumerate(top_k_indices):
-                selected_cfs[i].metadata["scores"] = scores.iloc[idx].to_dict()
-
         return selected_cfs
 
 
 class DensityBased(AggregatorBase):
     """Selects k diverse-yet-similar counterfactuals using a density-based objective (Cost Scaled Greedy)."""
 
-    def __init__(self, k: int = 5, n: int = 3, lambda_: float = 0.5, metric: str = "euclidean"):
+    def __init__(
+        self, k: int = 5, n: int = 3, lambda_: float = 0.5, metric: str = "euclidean"
+    ):
         """
         Parameters
         ----------
@@ -444,13 +435,13 @@ class DensityBased(AggregatorBase):
         """Compute sets of k-nearest neighbors (indices) for each counterfactual."""
         dists = pairwise_distances(cf_data, metric=self.metric)
         np.fill_diagonal(dists, np.inf)
-        knn_sets = [set(np.argsort(dists[i])[:self.n]) for i in range(len(cf_data))]
+        knn_sets = [set(np.argsort(dists[i])[: self.n]) for i in range(len(cf_data))]
         return knn_sets, dists
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs:
             return []
-            
+
         if len(cfs) <= self.k:
             selected_indices = list(range(len(cfs)))
         else:
@@ -459,7 +450,9 @@ class DensityBased(AggregatorBase):
 
             # Compute knn sets and pairwise distances
             knn_sets, pairwise_dists = self._compute_knn_sets(cf_data)
-            dist_to_x = pairwise_distances(cf_data, original_x, metric=self.metric).flatten()
+            dist_to_x = pairwise_distances(
+                cf_data, original_x, metric=self.metric
+            ).flatten()
 
             selected_indices = []
             covered = set()
@@ -487,20 +480,12 @@ class DensityBased(AggregatorBase):
                 covered.update(knn_sets[best_cf_idx])
 
         selected_cfs = [cfs[i] for i in selected_indices]
-        
-        if include_scores:
-            scores = self.calculate_scores(cfs)
-            for i, idx in enumerate(selected_indices):
-                selected_cfs[i].metadata["scores"] = scores.iloc[idx].to_dict()
-                
+
         return selected_cfs
 
 
 class All(AggregatorBase):
     """Return all (valid) counterfactuals found by explainer"""
 
-    def __call__(self, cfs: List[Counterfactual], include_scores: bool = False) -> List[Counterfactual]:
-        if include_scores and cfs:
-            scores = self.calculate_scores(cfs)
-            self._attach_scores(cfs, scores)
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         return cfs
