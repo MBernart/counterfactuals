@@ -17,10 +17,9 @@ from explainers_lib import Explainer, Dataset, Model, Counterfactual
 
 # note: This explainer does not support immutable features
 class CFProto(Explainer):
-    def __init__(self, k=1):
+    def __init__(self, diversity: list[dict]=[{"k": 1, "k_type": 'mean'}]):
         self.cf = None
-        self.safe_k = 1 # Fallback
-        self.k = k
+        self.diversity = diversity
 
     def fit(self, model: Model, data: Dataset) -> None:
         print(f"CFProto: Fitting on {len(data.data)} samples.")
@@ -29,17 +28,12 @@ class CFProto(Explainer):
         preds = model.predict_proba(data.data)
         predicted_classes = np.argmax(preds, axis=1)
         unique_preds, pred_counts = np.unique(predicted_classes, return_counts=True)
-        
-        if len(pred_counts) > 0:
-            min_pred_samples = np.min(pred_counts)
-        else:
-            min_pred_samples = 0
 
         self.available_classes = np.arange(preds.shape[1])
-        # self.safe_k = int(max(1, min(20, min_pred_samples)))
+        self.min_pred_samples = np.min(pred_counts) if len(pred_counts) > 0 else 0
         
         print(f"CFProto: Model prediction distribution: {dict(zip(unique_preds, pred_counts))}")
-        print(f"CFProto: Dynamic 'k' set to {self.safe_k} based on smallest predicted bucket.")
+        print(f"CFProto: min_pred_samples set to {self.min_pred_samples} based on smallest predicted bucket.")
 
         if data.continuous_features:
             num_transformer = data.preprocessor.named_transformers_['num']
@@ -125,50 +119,25 @@ class CFProto(Explainer):
             instance_class = data.target[i] if data.target is not None else model.predict(np.expand_dims(instance, axis=0))[0]
             other_classes = [cls for cls in self.available_classes if cls != instance_class]
 
-            explanation = self.cf.explain(
-                np.expand_dims(instance, axis=0),
-                Y=None,
-                target_class=other_classes,
-                k=self.safe_k,
-                k_type='mean',
-                threshold=0.,
-                verbose=True,
-                print_every=100,
-                log_every=100)
-            
-            if explanation.cf is not None:
-                best_cf_data = explanation.cf["X"]
+            for config in self.diversity:
+                explanation = self.cf.explain(
+                    np.expand_dims(instance, axis=0),
+                    Y=None,
+                    target_class=other_classes,
+                    k=min(self.min_pred_samples, config.get("k")),
+                    k_type=config.get("k_type"),
+                    threshold=0.,
+                    verbose=True,
+                    print_every=100,
+                    log_every=100)
                 
-                unique_cfs = [best_cf_data]
-                seen_hashes = {best_cf_data.tobytes()}
-                
-                if self.k > 1 and explanation.all:
-                    all_found_cfs = []
-                    for iteration, cfs_in_iter in explanation.all.items():
-                        all_found_cfs.extend(cfs_in_iter)
-                    
-                    # Sort runners-up by L1 distance to the original instance
-                    sorted_cfs = sorted(
-                        all_found_cfs, 
-                        key=lambda c: np.linalg.norm(c.flatten() - instance.flatten(), ord=1)
-                    )
-                    
-                    for c in sorted_cfs:
-                        if len(unique_cfs) >= self.k:
-                            break
-                            
-                        cf_bytes = c.tobytes()
-                        if cf_bytes not in seen_hashes:
-                            seen_hashes.add(cf_bytes)
-                            unique_cfs.append(c)
-
-                for cf_data_array in unique_cfs:
-                    cf_data_flat = cf_data_array[0]
-                    cf_class = model.predict(np.expand_dims(cf_data_flat, axis=0))[0]
+                if explanation.cf is not None:
+                    cf_data = explanation.cf["X"][0]
+                    cf_class = model.predict(np.expand_dims(cf_data, axis=0))[0]
 
                     cfs.append(Counterfactual(
                         instance,
-                        cf_data_flat,
+                        cf_data,
                         instance_class,
                         cf_class,
                         repr(self)
@@ -177,7 +146,17 @@ class CFProto(Explainer):
         return cfs
 
     def __repr__(self) -> str:
-        return f"cfproto(k={repr(self.k)})" # TODO: make the hyperparameters configurable
+        return f"cfproto(k={repr(len(self.diversity))})" # TODO: make the hyperparameters configurable
 
-explainer = CFProto()
+# Define a schedule of parameters to force diversity.
+# k: number of neighbors to form the prototype
+# k_type: 'mean' (average of k) or 'point' (the specific k-th nearest neighbor)
+diversity_configs = [
+    {"k": 1, "k_type": 'mean'},
+    {"k": 5, "k_type": 'mean'},
+    {"k": 2, "k_type": 'point'},
+    {"k": 10, "k_type": 'mean'},
+    {"k": 5, "k_type": 'point'},
+]
+explainer = CFProto(diversity_configs)
 create_celery_tasks(explainer, "alibi_cfproto")
