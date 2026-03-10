@@ -68,24 +68,56 @@ ensemble = Ensemble(
         # Native
         WachterExplainer(),
         GrowingSpheresExplainer(),
-        FaceExplainer(),
+        # FaceExplainer(),
         # Carla
-        # TODO(patryk): currently broken, but I am working on it! 
+        # TODO(patryk): currently broken, but I am working on it!
         # ActionableRecourseExplainer(),
         # Dice
-        DiceExplainer(),
+        # DiceExplainer(),
         # Alibi
-        AlibiCFProto(),
-        AlibiCFRL()
+        # AlibiCFProto(),
+        # AlibiCFRL()
     ],
-    Pareto())
-print(f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}")
+    Pareto(),
+)
+print(
+    f"Used celery explainers: {[explainer.explainer_name for explainer in ensemble.celery_explainers]}"
+)
 
 ensemble.fit(data)
 print(f"Ensemble fitting complete")
 
-cfs = ensemble.explain(data[:5],
-                       pretty_print=True,
-                       pretty_print_postprocess=data.inverse_transform,
-                       pretty_print_postprocess_target=label_encoder.inverse_transform)
+cfs = ensemble.explain(
+    data[:5],
+    pretty_print=True,
+    pretty_print_postprocess=data.inverse_transform,
+    pretty_print_postprocess_target=label_encoder.inverse_transform,
+)
+
+scores = ensemble.aggregator.calculate_scores(cfs)
+
 print(f"Number of generated cfs: {len(cfs)}")
+
+from rich.console import Console
+from rich.table import Table
+
+console = Console()
+table = Table(title="Counterfactual Scores")
+
+feas_key = [c for c in scores.columns if "K_Feasibility" in c][0]
+disc_key = [c for c in scores.columns if "DiscriminativePower" in c][0]
+
+table.add_column("Explainer", justify="center", style="dim")
+table.add_column("Proximity", justify="right", style="green")
+table.add_column(feas_key, justify="right", style="green")
+table.add_column(disc_key, justify="right", style="cyan")
+
+for cf, (_, cf_scores) in zip(cfs, scores.iterrows()):
+    table.add_row(
+        cf.explainer,
+        f"{cf_scores['Proximity']:.4f}",
+        f"{cf_scores[feas_key]:.4f}",
+        f"{cf_scores[disc_key]:.4f}",
+    )
+
+console.print(table)
