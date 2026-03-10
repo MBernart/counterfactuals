@@ -140,37 +140,37 @@ class TorchModel(Model):
     def fit(self, data: Dataset) -> None:
         raise NotImplementedError
 
-    def predict(self, data: Union[Dataset, np.ndarray]) -> List[ClassLabel]:
+    def predict(self, data: Union[Dataset, np.ndarray], batch_size: int = 64) -> np.ndarray:
         data = data.data if isinstance(data, Dataset) else data
-        labels = []
-        for instance in data:
-            # Convert the instance to a PyTorch Tensor
-            instance_tensor = self._torch.tensor(instance, dtype=self._torch.float32)
+        all_labels = []
+        for i in range(0, len(data), batch_size):
+            batch = data[i : i + batch_size]
+            batch_tensor = self._torch.tensor(batch, dtype=self._torch.float32)
+            batch_tensor = batch_tensor.to("cuda" if next(self._model.parameters()).is_cuda else "cpu")
 
-            # Move the tensor to the same device as the model (if using CUDA)
-            instance_tensor = instance_tensor.to(
-                "cuda" if next(self._model.parameters()).is_cuda else "cpu"
-            )  # model.device should be 'cpu' or 'cuda'
+            with self._torch.no_grad():
+                preds = self._model(batch_tensor)
+                all_labels.append(self._torch.argmax(preds, dim=1).cpu().numpy())
+        
+        return np.concatenate(all_labels, axis=0)
 
-            # Get the predicted class by passing the instance through the model
-            with self._torch.no_grad():  # Don't compute gradients during inference
-                preds = self._model(instance_tensor.unsqueeze(0))  # Add batch dimension
-                labels.append(int(self._torch.argmax(preds)))
-        return np.array(labels)
+    def predict_proba(self, data: np.ndarray, batch_size: int = 64) -> np.ndarray:
+        all_probs = []
+        for i in range(0, len(data), batch_size):
+            batch = data[i : i + batch_size]
+            batch_tensor = self._torch.tensor(batch, dtype=self._torch.float32)
+            batch_tensor = batch_tensor.to("cuda" if next(self._model.parameters()).is_cuda else "cpu")
 
-    def predict_proba(self, data: np.ndarray) -> np.ndarray:
-        data = self._torch.tensor(data, dtype=self._torch.float32)
-        data = data.to("cuda" if next(self._model.parameters()).is_cuda else "cpu")
+            with self._torch.no_grad():
+                output = self._model(batch_tensor)
+                if output.shape[1] == 1:  # binary classification
+                    probs = self._torch.sigmoid(output)
+                    probs = self._torch.cat([1 - probs, probs], dim=1)
+                else:
+                    probs = self._torch.softmax(output, dim=1)
+                all_probs.append(probs.cpu().numpy())
 
-        with self._torch.no_grad():
-            output = self._model(data)
-            if output.shape[1] == 1:  # binary classification
-                probs = self._torch.sigmoid(output)
-                probs = self._torch.cat([1 - probs, probs], dim=1)
-            else:
-                probs = self._torch.softmax(output, dim=1)
-
-        return probs.cpu().numpy()
+        return np.concatenate(all_probs, axis=0)
 
     def serialize(self) -> Tuple[bytes, str]:
         import io

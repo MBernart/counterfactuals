@@ -62,15 +62,31 @@ class Ensemble:
         if task:
             task.get()
 
-    def explain(
-        self,
+    def explain(self,
         data: Dataset,
+        batch_size: Optional[int] = None,
         pretty_print: bool = False,
         pretty_print_postprocess: Optional[Postprocessor] = None,
         pretty_print_postprocess_target: Optional[Postprocessor] = None,
-        feature_names: Optional[List[str]] = None,
-    ) -> List[Counterfactual]:
+        feature_names: Optional[List[str]] = None) -> List[Counterfactual]:
         """This method is used to generate counterfactuals"""
+
+        if batch_size is not None:
+            all_filtered_counterfactuals = list()
+            for i in range(0, len(data.data), batch_size):
+                batch_data = data[i : i + batch_size]
+                batch_cfs = self.explain(
+                    batch_data,
+                    batch_size=None, # Avoid recursion
+                    include_scores=include_scores,
+                    pretty_print=False # Only print once at the end if requested
+                )
+                all_filtered_counterfactuals.extend(batch_cfs)
+            
+            if pretty_print:
+                print_cfs(all_filtered_counterfactuals, data=data, model=self.model, explainers=self.get_explainers_repr(), postprocess=pretty_print_postprocess, postprocess_target=pretty_print_postprocess_target, feature_names=feature_names)
+            
+            return all_filtered_counterfactuals
 
         task = explain_celery_explainers(self.celery_explainers, self.model, data)
 
