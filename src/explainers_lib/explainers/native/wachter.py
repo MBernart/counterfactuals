@@ -28,18 +28,15 @@ class WachterExplainer(Explainer):
         optimization_method (str): The gradient-free optimization method used by scipy.optimize.
             Options include 'COBYLA', 'Nelder-Mead', 'Powell'. Default is 'COBYLA'.
             For more details, see: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
-        random_seed (int, optional): Seed for reproducibility.
     """
 
     def __init__(
         self,
         lambda_param: Union[float, List[float]] = 0.1,
-        random_seed: Optional[int] = None,
         max_iter: int = 1000,
         optimization_method: str = "COBYLA",
     ):
         self.lambda_param = lambda_param
-        self.random_seed = random_seed
         self.max_iter = max_iter
         self.optimization_method = optimization_method
         
@@ -49,10 +46,8 @@ class WachterExplainer(Explainer):
         self.feature_bounds: List[Tuple[float, float]] = []
 
     def __repr__(self) -> str:
-        lambda_param = "ADAPTIVE" if isinstance(self.lambda_param, list) else self.lambda_param
         return (
-            f"wachter(lambda_param={repr(lambda_param)}, method={self.optimization_method}, "
-            f"max_iter={self.max_iter}, random_seed={self.random_seed})"
+            f"wachter(lambda_param={repr(self.lambda_param)}, method={self.optimization_method}, max_iter={self.max_iter})"
         )
 
     def fit(self, model: Model, data: Dataset) -> None:
@@ -101,7 +96,7 @@ class WachterExplainer(Explainer):
         for _ in range(start_cat_idx, total_cols):
             self.feature_bounds.append((0.0, 1.0))
 
-    def explain(self, model: Model, data: Dataset, y_desired: int = None) -> List[Counterfactual]:
+    def explain(self, model: Model, data: Dataset, y_desired: Optional[int] = None) -> List[Counterfactual]:
         if isinstance(model, TorchModel) and model._torch.cuda.is_available():
             model._model.to("cuda")
 
@@ -110,19 +105,21 @@ class WachterExplainer(Explainer):
 
         for i in tqdm(range(len(X_data)), unit="instance"):
             instance_raw = X_data[i]
-            original_class = np.argmax(model.predict_proba(instance_raw.reshape(1, -1)))
-            target_range = ([y_desired] if y_desired is not None else range(len(set(data.target))))
+            probs = model.predict_proba(instance_raw.reshape(1, -1))
+            original_class = np.argmax(probs)
+            
+            if y_desired == original_class:
+                continue
 
-            for target_class in target_range:
-                if target_class == original_class:
-                    continue
-                try:
-                    cf = self._generate_counterfactual(instance_raw, model, target_class, original_class)
-                    if cf is not None:
-                        counterfactuals.append(cf)
-                        break 
-                except ValueError:
-                    continue
+            if y_desired is not None:
+                targets = [y_desired]
+            else:
+                num_classes = probs.shape[1]
+                targets = [c for c in range(num_classes) if c != original_class]
+
+            for target in targets:
+                cfs = self._generate_counterfactual(instance_raw, model, target, original_class)
+                counterfactuals.extend(cfs)
 
         return counterfactuals
 
@@ -139,7 +136,6 @@ class WachterExplainer(Explainer):
         x_cand_reshaped = x_candidate.reshape(1, -1)
 
         probs = model.predict_proba(x_cand_reshaped)[0]
-        probs = softmax(probs)
         target_prob = probs[target_class]
 
         pred_loss = (target_prob - 1.0) ** 2
@@ -162,11 +158,9 @@ class WachterExplainer(Explainer):
         model: Model,
         target_class: int,
         original_class: int
-    ) -> Optional[Counterfactual]:
-        """
-        Generate a counterfactual using the Wachter method.
-        """
-
+    ) -> List[Counterfactual]:
+        
+        cfs_list: List[Counterfactual] = []
         try:
             if target_class == original_class:
                 raise ValueError("Target class cannot be the same as original class")
@@ -174,9 +168,6 @@ class WachterExplainer(Explainer):
             x_instance = instance_array.flatten()
             initial_guess = x_instance.copy()
 
-            # Adaptive Lambda Search
-            # We try progressively stronger penalties for the prediction loss.
-            # This forces the optimizer to prioritize 'flipping the class' over 'staying close'.
             lambda_values = self.lambda_param if isinstance(self.lambda_param, list) else [self.lambda_param]
             
             for lambda_param in lambda_values:    
@@ -204,13 +195,15 @@ class WachterExplainer(Explainer):
                 pred_probs = model.predict_proba(cf_candidate)[0]
                 pred_class = np.argmax(pred_probs)
 
-                if pred_class == target_class:
-                    return Counterfactual(
+                if pred_class != original_class and pred_class == target_class:
+                    cfs_list.append(Counterfactual(
                         original_data=x_instance,
                         data=cf_candidate.flatten(),
                         original_class=original_class,
                         target_class=pred_class,
                         explainer=repr(self),
-                    )
+                    ))
         except Exception as e:
-            raise ValueError(f"Failed to generate counterfactual: {str(e)}")
+            print(f"Error generating CF for target {target_class}: {e}")
+            
+        return cfs_list
