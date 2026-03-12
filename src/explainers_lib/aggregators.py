@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod  # proposed by gpt
-from typing import Callable, List
+from typing import Callable, List, Optional
 from .utils.scores import get_scores
 from .model import Model
 from .datasets import Dataset
@@ -14,11 +14,68 @@ from sklearn.metrics import pairwise_distances
 
 
 # Type alias (for convenience or registration)
-Aggregator = Callable[[List[Counterfactual]], List[Counterfactual]]
+Aggregator = Callable[[List[Counterfactual], bool], List[Counterfactual]]
 
 
 class AggregatorBase(ABC):
     """Abstract base class for counterfactual aggregators"""
+
+    def __init__(self):
+        self.model = None
+        self.data = None
+        self.train_preds = None
+
+    def fit(self, model: Model, data: Dataset) -> None:
+        """Fits the aggregator by storing model and training data predictions."""
+        self.model = model
+        self.data = data
+        self.train_preds = self.model.predict(self.data)
+
+    def calculate_scores(
+        self,
+        cfs: List[Counterfactual],
+        k_neighbors_feasib: int = 3,
+        k_neighbors_discriminative: int = 9,
+    ) -> pd.DataFrame:
+        """Calculates the standard scores for a list of counterfactuals."""
+        if self.model is None or self.data is None:
+            raise RuntimeError(
+                "Aggregator must be fitted before calculating scores. Call fit(model, data) first."
+            )
+
+        cfs_data_ohe = np.array([cf.data for cf in cfs])
+        cfs_df_raw = self.data.inverse_transform(cfs_data_ohe)
+        cfs_data_raw = cfs_df_raw.to_numpy()
+
+        # note: must be 2D (1, N) because scores.py slices it like x[:, indices]
+        original_data_ohe = cfs[0].original_data.reshape(1, -1)
+        original_df_raw = self.data.inverse_transform(original_data_ohe)
+        original_data_raw = original_df_raw.to_numpy()
+
+        training_data_raw = self.data.df.to_numpy()
+
+        feature_names = self.data.features
+
+        cont_indices = [
+            feature_names.index(col) for col in self.data.continuous_features
+        ]
+        cat_indices = [
+            feature_names.index(col) for col in self.data.categorical_features
+        ]
+
+        cfs_target = np.array([cf.target_class for cf in cfs])
+
+        return get_scores(
+            cfs=cfs_data_raw,
+            cf_predicted_classes=cfs_target,
+            x=original_data_raw,
+            training_data=training_data_raw,
+            training_data_predicted_classes=self.train_preds,
+            continous_indices=cont_indices,
+            categorical_indices=cat_indices,
+            k_neighbors_feasib=k_neighbors_feasib,
+            k_neighbors_discriminative=k_neighbors_discriminative,
+        ).reset_index(drop=True)
 
     @abstractmethod
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
@@ -32,50 +89,17 @@ class ScoreBasedAggregator(AggregatorBase):
     """
 
     def __init__(self, k_neigh_feasibility: int = 3, k_neigh_discriminative: int = 9):
+        super().__init__()
         self.k_neigh_feasibility = k_neigh_feasibility
         self.k_neigh_discriminative = k_neigh_discriminative
-        self.model = None
-        self.data = None
-        self.train_preds = None
-
-    def fit(self, model: Model, data: Dataset) -> None:
-        """Fits the aggregator by storing model and training data predictions."""
-        self.model = model
-        self.data = data
-        self.train_preds = self.model.predict(self.data)
 
     def calculate_scores(self, cfs: List[Counterfactual]) -> pd.DataFrame:
-        """Calculates the standard scores for a list of counterfactuals."""
-
-        cfs_data_ohe = np.array([cf.data for cf in cfs])
-        cfs_df_raw = self.data.inverse_transform(cfs_data_ohe)
-        cfs_data_raw = cfs_df_raw.to_numpy()
-
-        # note: must be 2D (1, N) because scores.py slices it like x[:, indices]
-        original_data_ohe = cfs[0].original_data.reshape(1, -1)
-        original_df_raw = self.data.inverse_transform(original_data_ohe)
-        original_data_raw = original_df_raw.to_numpy() 
-
-        training_data_raw = self.data.df.to_numpy()
-
-        feature_names = self.data.features
-        
-        cont_indices = [feature_names.index(col) for col in self.data.continuous_features]
-        cat_indices = [feature_names.index(col) for col in self.data.categorical_features]
-
-        cfs_target = np.array([cf.target_class for cf in cfs])
-
-        return get_scores(
-            cfs=cfs_data_raw,
-            cf_predicted_classes=cfs_target,
-            x=original_data_raw,
-            training_data=training_data_raw,
-            training_data_predicted_classes=self.train_preds,
-            continous_indices=cont_indices,
-            categorical_indices=cat_indices,
+        """Calculates the standard scores using instance parameters."""
+        return super().calculate_scores(
+            cfs,
             k_neighbors_feasib=self.k_neigh_feasibility,
             k_neighbors_discriminative=self.k_neigh_discriminative,
-        ).reset_index(drop=True)
+        )
 
     @abstractmethod
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
@@ -92,12 +116,15 @@ class Pareto(ScoreBasedAggregator):
         )
 
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+        if not cfs:
+            return []
+
         scores = self.calculate_scores(cfs)
 
         # Example: return all Pareto-efficient counterfactuals
         x_metric = "Proximity"
-        y_metric = "K_Feasibility(3)"
-        z_metric = "DiscriminativePower(9)"
+        y_metric = f"K_Feasibility({self.k_neigh_feasibility})"
+        z_metric = f"DiscriminativePower({self.k_neigh_discriminative})"
         optimization_direction = ["min", "min", "max"]
 
         all_x = scores[x_metric].to_numpy()
@@ -110,8 +137,9 @@ class Pareto(ScoreBasedAggregator):
         ).astype(bool)
 
         pareto_indices = np.where(pareto_mask)[0]
-        pareto_cfs = [cfs[i] for i in pareto_indices]
-        return pareto_cfs
+        selected_cfs = [cfs[i] for i in pareto_indices]
+
+        return selected_cfs
 
 
 class IdealPoint(ScoreBasedAggregator):
@@ -134,11 +162,14 @@ class IdealPoint(ScoreBasedAggregator):
         self.weights = weights
 
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+        if not cfs:
+            return []
+
         scores = self.calculate_scores(cfs)
 
         x_metric = "Proximity"
-        y_metric = "K_Feasibility(3)"
-        z_metric = "DiscriminativePower(9)"
+        y_metric = f"K_Feasibility({self.k_neigh_feasibility})"
+        z_metric = f"DiscriminativePower({self.k_neigh_discriminative})"
         optimization_direction = ["min", "min", "max"]
 
         all_x = scores[x_metric].to_numpy()
@@ -166,8 +197,12 @@ class IdealPoint(ScoreBasedAggregator):
         diffs = pareto_data - ideal_point
         dists = np.sqrt(np.sum(weights * diffs**2, axis=1))
         # pick closest
-        best_idx = np.argmin(dists)
-        return [pareto_cfs[best_idx]]
+        best_pareto_idx = np.argmin(dists)
+        best_idx = pareto_indices[best_pareto_idx]
+
+        selected_cfs = [cfs[best_idx]]
+
+        return selected_cfs
 
 
 class BalancedPoint(ScoreBasedAggregator):
@@ -183,11 +218,14 @@ class BalancedPoint(ScoreBasedAggregator):
         )
 
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+        if not cfs:
+            return []
+
         scores = self.calculate_scores(cfs)
 
         x_metric = "Proximity"
-        y_metric = "K_Feasibility(3)"
-        z_metric = "DiscriminativePower(9)"
+        y_metric = f"K_Feasibility({self.k_neigh_feasibility})"
+        z_metric = f"DiscriminativePower({self.k_neigh_discriminative})"
         optimization_direction = ["min", "min", "max"]
 
         all_x = scores[x_metric].to_numpy()
@@ -200,7 +238,6 @@ class BalancedPoint(ScoreBasedAggregator):
         ).astype(bool)
 
         pareto_indices = np.where(pareto_mask)[0]
-        pareto_cfs = [cfs[i] for i in pareto_indices]
         pareto_data = to_check[pareto_mask]
 
         # Compute ideal and nadir points
@@ -219,9 +256,12 @@ class BalancedPoint(ScoreBasedAggregator):
 
         # Choose Pareto solution closest to midpoint
         dists = np.linalg.norm(pareto_data - midpoint, axis=1)
-        best_idx = np.argmin(dists)
+        best_pareto_idx = np.argmin(dists)
+        best_idx = pareto_indices[best_pareto_idx]
 
-        return [pareto_cfs[best_idx]]
+        selected_cfs = [cfs[best_idx]]
+
+        return selected_cfs
 
 
 class ParetoMeanPoint(ScoreBasedAggregator):
@@ -230,7 +270,9 @@ class ParetoMeanPoint(ScoreBasedAggregator):
     to the mean (or median) of all points on the Pareto front.
     """
 
-    def __init__(self, metric: str = "mean", k_neigh_feasibility=3, k_neigh_discriminative=9):
+    def __init__(
+        self, metric: str = "mean", k_neigh_feasibility=3, k_neigh_discriminative=9
+    ):
         super().__init__(
             k_neigh_feasibility=k_neigh_feasibility,
             k_neigh_discriminative=k_neigh_discriminative,
@@ -261,7 +303,6 @@ class ParetoMeanPoint(ScoreBasedAggregator):
         if len(pareto_indices) == 0:
             return []
 
-        pareto_cfs = [cfs[i] for i in pareto_indices]
         pareto_data = to_check[pareto_mask]
 
         if self.metric == "mean":
@@ -272,9 +313,12 @@ class ParetoMeanPoint(ScoreBasedAggregator):
             raise ValueError(f"Unknown metric: {self.metric}. Use 'mean' or 'median'.")
 
         dists = np.linalg.norm(pareto_data - center_point, axis=1)
-        best_idx = np.argmin(dists)
+        best_pareto_idx = np.argmin(dists)
+        best_idx = pareto_indices[best_pareto_idx]
 
-        return [pareto_cfs[best_idx]]
+        selected_cfs = [cfs[best_idx]]
+
+        return selected_cfs
 
 
 class TOPSIS(ScoreBasedAggregator):
@@ -313,8 +357,8 @@ class TOPSIS(ScoreBasedAggregator):
 
         criteria_cols = [
             "Proximity",
-            "K_Feasibility(3)",
-            "DiscriminativePower(9)",
+            f"K_Feasibility({self.k_neigh_feasibility})",
+            f"DiscriminativePower({self.k_neigh_discriminative})",
         ]
         optimization_direction = ["min", "min", "max"]
 
@@ -366,7 +410,9 @@ class TOPSIS(ScoreBasedAggregator):
 class DensityBased(AggregatorBase):
     """Selects k diverse-yet-similar counterfactuals using a density-based objective (Cost Scaled Greedy)."""
 
-    def __init__(self, k: int = 5, n: int = 3, lambda_: float = 0.5, metric: str = "euclidean"):
+    def __init__(
+        self, k: int = 5, n: int = 3, lambda_: float = 0.5, metric: str = "euclidean"
+    ):
         """
         Parameters
         ----------
@@ -379,6 +425,7 @@ class DensityBased(AggregatorBase):
         metric : str
             Distance metric for pairwise and instance comparisons.
         """
+        super().__init__()
         self.k = k
         self.n = n
         self.lambda_ = lambda_
@@ -388,46 +435,52 @@ class DensityBased(AggregatorBase):
         """Compute sets of k-nearest neighbors (indices) for each counterfactual."""
         dists = pairwise_distances(cf_data, metric=self.metric)
         np.fill_diagonal(dists, np.inf)
-        knn_sets = [set(np.argsort(dists[i])[:self.n]) for i in range(len(cf_data))]
+        knn_sets = [set(np.argsort(dists[i])[: self.n]) for i in range(len(cf_data))]
         return knn_sets, dists
 
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+        if not cfs:
+            return []
+
         if len(cfs) <= self.k:
-            return cfs
+            selected_indices = list(range(len(cfs)))
+        else:
+            cf_data = np.array([cf.data for cf in cfs])
+            original_x = cfs[0].original_data.reshape(1, -1)
 
-        cf_data = np.array([cf.data for cf in cfs])
-        original_x = cfs[0].original_data.reshape(1, -1)
+            # Compute knn sets and pairwise distances
+            knn_sets, pairwise_dists = self._compute_knn_sets(cf_data)
+            dist_to_x = pairwise_distances(
+                cf_data, original_x, metric=self.metric
+            ).flatten()
 
-        # Compute knn sets and pairwise distances
-        knn_sets, pairwise_dists = self._compute_knn_sets(cf_data)
-        dist_to_x = pairwise_distances(cf_data, original_x, metric=self.metric).flatten()
+            selected_indices = []
+            covered = set()
 
-        selected = []
-        covered = set()
+            for _ in range(self.k):
+                best_cf_idx = None
+                best_gain = -np.inf
 
-        for _ in range(self.k):
-            best_cf_idx = None
-            best_gain = -np.inf
+                for i in range(len(cfs)):
+                    if i in selected_indices:
+                        continue
 
-            for i in range(len(cfs)):
-                if i in selected:
-                    continue
+                    # Coverage gain (new neighbors added)
+                    new_coverage = len(knn_sets[i] - covered)
+                    similarity_penalty = self.lambda_ * dist_to_x[i]
+                    gain = new_coverage - similarity_penalty
 
-                # Coverage gain (new neighbors added)
-                new_coverage = len(knn_sets[i] - covered)
-                similarity_penalty = self.lambda_ * dist_to_x[i]
-                gain = new_coverage - similarity_penalty
+                    if gain > best_gain:
+                        best_gain = gain
+                        best_cf_idx = i
 
-                if gain > best_gain:
-                    best_gain = gain
-                    best_cf_idx = i
+                if best_cf_idx is None or best_gain <= 0:
+                    break  # No improvement
+                selected_indices.append(best_cf_idx)
+                covered.update(knn_sets[best_cf_idx])
 
-            if best_cf_idx is None or best_gain <= 0:
-                break  # No improvement
-            selected.append(best_cf_idx)
-            covered.update(knn_sets[best_cf_idx])
+        selected_cfs = [cfs[i] for i in selected_indices]
 
-        selected_cfs = [cfs[i] for i in selected]
         return selected_cfs
 
 
