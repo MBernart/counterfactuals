@@ -497,6 +497,10 @@ class RandomPoint(AggregatorBase):
         self.k = k
         self.rng = random.Random(seed)
 
+    def fit(self, *args, **kwargs):
+        # TODO: why every selector calculates the scores? i believe it used to be just the ScoreBasedSelectors that calculated the scores
+        pass
+
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         if not cfs:
             return []
