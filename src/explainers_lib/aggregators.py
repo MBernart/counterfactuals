@@ -8,7 +8,7 @@ from .datasets import Dataset
 from .counterfactual import Counterfactual
 from .utils.pareto import get_pareto_optimal_mask, get_ideal_point
 from sklearn.metrics import pairwise_distances
-
+import random
 
 # Aggregator: TypeAlias = Callable[[Sequence[Counterfactual]], Counterfactual]
 
@@ -489,3 +489,16 @@ class All(AggregatorBase):
 
     def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
         return cfs
+    
+class RandomPoint(AggregatorBase):
+    """Return k-random counterfactuals found by explainer"""
+
+    def __init__(self, k: int = 1, seed: int = None):
+        self.k = k
+        self.rng = random.Random(seed)
+
+    def __call__(self, cfs: List[Counterfactual]) -> List[Counterfactual]:
+        if not cfs:
+            return []
+        
+        return self.rng.sample(cfs, min(len(cfs), self.k))
