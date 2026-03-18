@@ -48,7 +48,7 @@ with open("temp_model.pt", "rb") as f:
 model = TorchModel.deserialize(model_data)
 
 # Running the explainer
-explainer = WachterExplainer()
+explainer = WachterExplainer(lambda_param=[1.0, 10.0, 100.0])
 explainer.fit(model, data)
 cfs = explainer.explain(model, data[:5])
 
