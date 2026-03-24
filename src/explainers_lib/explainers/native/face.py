@@ -115,7 +115,7 @@ class FaceExplainer(Explainer):
         
         # Note: Input data uses the transformed names
         df = pd.DataFrame(data.data, columns=self.transformed_feature_names) 
-        y_target = y_desired or self.desired_class or 1
+        y_target = y_desired if y_desired is not None else self.desired_class
 
         for i in tqdm(range(len(df)), unit="instance"):
             instance_df = df.iloc[[i]]
@@ -133,12 +133,12 @@ class FaceExplainer(Explainer):
         """
         raise NotImplementedError("Since this method now is able to return multiple counterfactuals per instance, the return type of this method needs to be changed to be implemented propely")
         instance_df = pd.DataFrame(instance_ds.data, columns=self.transformed_feature_names)
-        target = target_class or self.desired_class or 1
+        target = target_class if target_class is not None else self.desired_class
         return self._generate_cf(instance_df, model, target)
 
-    def _generate_cf(self, instance_df: pd.DataFrame, model: Model, target_class: int) -> List[Counterfactual]:
+    def _generate_cf(self, instance_df: pd.DataFrame, model: Model, target_class: Optional[int]) -> List[Counterfactual]:
         """
-        Helper to generate a single counterfactual using the true FACE approach (shortest path on manifold).
+        Helper to generate counterfactuals using the true FACE approach (shortest path on manifold).
         """
         if self.adjacency_matrix is None:
             raise RuntimeError("Explainer must be fitted before generating explanations.")
@@ -149,8 +149,13 @@ class FaceExplainer(Explainer):
             pred_probs = model.predict_proba(instance.reshape(1, -1))
             pred_orig = np.argmax(pred_probs)
             
-            if pred_orig == target_class:
-                return []
+            if target_class is not None:
+                if pred_orig == target_class:
+                    return []
+                target_mask = (self.y_graph == target_class)
+            else:
+                # If no target specified, any class other than the original will do
+                target_mask = (self.y_graph != pred_orig)
 
             # 1. Find the Nearest Node in the Training Graph (Source Node for Dijkstra)
             # This is necessary because the input 'instance' is usually not one of the graph nodes (self.X_graph)
@@ -172,7 +177,6 @@ class FaceExplainer(Explainer):
             
             # 3. Identify Target Nodes and Filter by Target Class
             geodesic_distances = geodesic_distances.flatten()
-            target_mask = (self.y_graph == target_class)
             target_indices = np.where(target_mask)[0]
             
             if len(target_indices) == 0:
@@ -196,7 +200,7 @@ class FaceExplainer(Explainer):
                 original_data=instance,
                 data=self.X_graph[idx],
                 original_class=pred_orig,
-                target_class=target_class,
+                target_class=self.y_graph[idx],
                 explainer=repr(self),
             ), best_idxs))
 
