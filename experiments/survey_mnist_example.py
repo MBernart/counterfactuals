@@ -93,7 +93,7 @@ class Encoder(nn.Module):
         )
     def forward(self, x):
         return self.encoder(x)
-    
+
 class Decoder(nn.Module):
     def __init__(self, latent_dim=32):
         super().__init__()
@@ -113,7 +113,7 @@ class Decoder(nn.Module):
         x = x.view(-1, 256, 4, 4)
         x = self.decoder(x)
         return x
-    
+
 class Autoencoder(nn.Module):
     def __init__(self, latent_dim=32):
         super().__init__()
@@ -126,6 +126,19 @@ class Autoencoder(nn.Module):
 # ==========================================
 # 3. Plotting & Export Logic
 # ==========================================
+def draw_arrow_with_text(ax, text):
+    """Helper to draw a styled arrow with centered text above it."""
+    ax.axis('off')
+    ax.annotate('', xy=(0.95, 0.5), xytext=(0.05, 0.5),
+                arrowprops=dict(facecolor='black', width=3, headwidth=12),
+                xycoords='axes fraction')
+    ax.text(0.5, 0.65, text, ha='center', va='center', fontsize=12, fontweight='bold', transform=ax.transAxes)
+
+def draw_class_label(ax, label):
+    """Helper to draw the large prediction number."""
+    ax.axis('off')
+    ax.text(0.5, 0.5, str(label), ha='center', va='center', fontsize=54, fontweight='bold', transform=ax.transAxes)
+
 def process_and_export_cfe(cf, autoencoder, index, selected_lang):
     autoencoder.to(device)
     autoencoder.eval()
@@ -143,71 +156,75 @@ def process_and_export_cfe(cf, autoencoder, index, selected_lang):
     cfe_recon_np = cfe_recon.detach().cpu().numpy()[0, 0]
     cfe_recon_np = ((cfe_recon_np + 1) / 2).clip(0, 1)
 
-    # ---- OVERLAY DIFFERENCE MASK ----
-    O = org_recon_np
-    C = cfe_recon_np
-
-    # Calculate stroke overlap, additions, and removals
-    overlap = np.minimum(O, C)
-    added = np.clip(C - O, 0, 1)    # Will be mapped to Green
-    removed = np.clip(O - C, 0, 1)  # Will be mapped to Red
-
-    # Start with pure white RGB
-    diff_rgb = np.ones((*O.shape, 3))
-
-    # 1. Overlap -> Black (Subtract from all channels)
-    diff_rgb[:, :, 0] -= overlap
-    diff_rgb[:, :, 1] -= overlap
-    diff_rgb[:, :, 2] -= overlap
-
-    # 2. Added -> Green (Subtract from Red and Blue channels)
-    diff_rgb[:, :, 0] -= added
-    diff_rgb[:, :, 2] -= added
-
-    # 3. Removed -> Red (Subtract from Green and Blue channels)
-    diff_rgb[:, :, 1] -= removed
-    diff_rgb[:, :, 2] -= removed
-
-    diff_rgb = np.clip(diff_rgb, 0, 1)
+    org_class = cf.original_class
+    target_class = cf.target_class
 
     # ---- EXPORT CONFIGURATIONS ----
     configs = [
-        {"prefix": "en", "labels": ("Original", "Counterfactual", "Difference")},
-        {"prefix": "pl", "labels": ("Oryginał", "Kontrfakt", "Różnica")}
+        {
+            "prefix": "en",
+            "pred_text": "Model\nPrediction",
+            "expl_text": "Explainer\n(What if?)"
+        },
+        {
+            "prefix": "pl",
+            "pred_text": "Decyzja\nkomputera",
+            "expl_text": "Wyjaśnienie\n(Co by było?)"
+        }
     ]
 
     for cfg in configs:
-        lbl_orig, lbl_cf, lbl_diff = cfg["labels"]
+        # ---------------------------------------------------------
+        # FIGURE 1: Standard Prediction
+        # ---------------------------------------------------------
+        fig1 = plt.figure(figsize=(7, 2.5))
         
-        fig = plt.figure(figsize=(12, 4))
+        ax1 = fig1.add_subplot(1, 3, 1)
+        ax1.imshow(1.0 - org_recon_np, cmap='gray', vmin=0, vmax=1)
+        ax1.axis("off")
         
-        plt.subplot(1, 3, 1)
-        plt.imshow(1.0 - org_recon_np, cmap='gray', vmin=0, vmax=1)
-        plt.title(lbl_orig, fontsize=16)
-        plt.axis("off")
-
-        plt.subplot(1, 3, 2)
-        plt.imshow(1.0 - cfe_recon_np, cmap='gray', vmin=0, vmax=1)
-        plt.title(lbl_cf, fontsize=16)
-        plt.axis("off")
-
-        plt.subplot(1, 3, 3)
-        plt.imshow(diff_rgb)
-        plt.title(lbl_diff, fontsize=16)
-        plt.axis("off")
-
+        ax2 = fig1.add_subplot(1, 3, 2)
+        draw_arrow_with_text(ax2, cfg["pred_text"])
+        
+        ax3 = fig1.add_subplot(1, 3, 3)
+        draw_class_label(ax3, org_class)
+        
         plt.tight_layout()
+        fig1.savefig(f"{cfg['prefix']}_fig1_standard_pred_{index}.png", dpi=300, bbox_inches='tight')
+
+        # ---------------------------------------------------------
+        # FIGURE 2: Counterfactual Explanation
+        # ---------------------------------------------------------
+        fig2 = plt.figure(figsize=(12, 2.5))
         
-        # Always save both language versions to disk
-        filename = f"{cfg['prefix']}_cfe_{index}.png"
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        bx1 = fig2.add_subplot(1, 5, 1)
+        bx1.imshow(1.0 - org_recon_np, cmap='gray', vmin=0, vmax=1)
+        bx1.axis("off")
         
-        # Only display the UI window for the language the user actually requested
-        if cfg['prefix'] == selected_lang:
-            print(f"Saved both versions. Displaying {selected_lang.upper()} view. Close window to exit.")
-            plt.show()
-        else:
-            plt.close(fig) # Close the background figure so it doesn't stay in memory
+        bx2 = fig2.add_subplot(1, 5, 2)
+        draw_arrow_with_text(bx2, cfg["expl_text"])
+        
+        bx3 = fig2.add_subplot(1, 5, 3)
+        bx3.imshow(1.0 - cfe_recon_np, cmap='gray', vmin=0, vmax=1)
+        bx3.axis("off")
+        
+        bx4 = fig2.add_subplot(1, 5, 4)
+        draw_arrow_with_text(bx4, cfg["pred_text"])
+        
+        bx5 = fig2.add_subplot(1, 5, 5)
+        draw_class_label(bx5, target_class)
+        
+        plt.tight_layout()
+        fig2.savefig(f"{cfg['prefix']}_fig2_counterfactual_{index}.png", dpi=300, bbox_inches='tight')
+
+        # Only keep the figure open in memory if it matches the selected language
+        if cfg['prefix'] != selected_lang:
+            plt.close(fig1)
+            plt.close(fig2)
+
+    print(f"\nSaved all image versions to disk.")
+    print(f"Displaying {selected_lang.upper()} view. Close both figure windows to exit.")
+    plt.show()
 
 # ==========================================
 # 4. Execution Pipeline
@@ -219,7 +236,7 @@ if __name__ == "__main__":
 
     print("\nLoading Autoencoder...")
     autoencoder = Autoencoder(latent_dim=32).to(device)
-    
+
     try:
         state_dict = torch.load('models/torch_ae_mnist_paper.pth', map_location=device)
         autoencoder.load_state_dict(state_dict)
@@ -227,18 +244,22 @@ if __name__ == "__main__":
         print(f"Warning: Issue loading weights. Error: {e}")
 
     print("Loading Counterfactuals...")
-    with open('results/mnist_tagged_cfes.pkl', 'rb') as f:
-        cf_data_list = pickle.load(f)
+    try:
+        with open('results/mnist_tagged_cfes.pkl', 'rb') as f:
+            cf_data_list = pickle.load(f)
 
-    cfes = []
-    for item in cf_data_list:
-        if isinstance(item, dict) and 'cf_bytes' in item:
-            cfes.append(Counterfactual.deserialize(item['cf_bytes']))
-        elif isinstance(item, Counterfactual):
-            cfes.append(item)
+        cfes = []
+        for item in cf_data_list:
+            if isinstance(item, dict) and 'cf_bytes' in item:
+                cfes.append(Counterfactual.deserialize(item['cf_bytes']))
+            elif isinstance(item, Counterfactual):
+                cfes.append(item)
 
-    target_idx = 11
-    if target_idx < len(cfes):
-        process_and_export_cfe(cfes[target_idx], autoencoder, target_idx, selected_lang=lang_choice)
-    else:
-        print(f"Error: Index {target_idx} is out of bounds. File only contains {len(cfes)} CFEs.")
+        target_idx = 11
+        if target_idx < len(cfes):
+            process_and_export_cfe(cfes[target_idx], autoencoder, target_idx, selected_lang=lang_choice)
+        else:
+            print(f"Error: Index {target_idx} is out of bounds. File only contains {len(cfes)} CFEs.")
+            
+    except FileNotFoundError:
+        print("Error: Could not find 'results/mnist_tagged_cfes.pkl'. Please check the path.")
