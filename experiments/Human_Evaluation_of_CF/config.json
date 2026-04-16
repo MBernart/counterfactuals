@@ -1,0 +1,487 @@
+{
+  "base_path": "/ankieta",
+  "languages": [
+    { "id": "pl", "name": "Polski" },
+    { "id": "en", "name": "English" }
+  ],
+  "ui": {
+    "pl": {
+      "next": "Dalej",
+      "submit": "Wyślij",
+      "thanks": "Dziękujemy!",
+      "success_msg": "Twoja ankieta została wysłana pomyślnie.",
+      "drag_hint": "Przeciągnij obrazki do odpowiednich kontenerów (Miejsca od 1 do 4). Na urządzeniach mobilnych: najpierw dotknij obrazka, a potem wybranego miejsca. Jeśli uważasz, że kilka obrazków jest równie dobrych, możesz umieścić je w tym samym polu (dopuszczalne są remisy).",
+      "place": "Miejsce",
+      "select_default": "Wybierz...",
+      "interstitial_title": "Chcesz zakończyć ankietę czy ocenić dwa kolejne obrazki?",
+      "continue": "Oceń kolejne",
+      "end": "Zakończ i przejdź do podsumowania",
+      "reference": "Oryginał"
+    },
+    "en": {
+      "next": "Next",
+      "submit": "Submit",
+      "thanks": "Thank you!",
+      "success_msg": "Your survey has been submitted successfully.",
+      "drag_hint": "Drag the images into the appropriate containers (Places 1-4). On mobile: tap an image first, then tap its destination. If you think multiple images are equally good, you can put them in the same box (ties are allowed).",
+      "place": "Place",
+      "select_default": "Select...",
+      "interstitial_title": "Do you want to end the survey or evaluate two more images?",
+      "continue": "Evaluate more",
+      "end": "End and go to summary",
+      "reference": "Reference Image"
+    }
+  },
+  "demographics": [
+    {
+      "id": "familiar_ml",
+      "text": {
+        "pl": "Czy orientujesz się w tematyce uczenia maszynowego?",
+        "en": "Are you familiar with the topic of machine learning?"
+      },
+      "type": "radio",
+      "options": [
+        { "id": "y", "text": { "pl": "Tak", "en": "Yes" } },
+        { "id": "n", "text": { "pl": "Nie", "en": "No" } }
+      ]
+    },
+    {
+      "id": "familiar_metrics",
+      "text": {
+        "pl": "Czy znasz metody/metryki pozwalające ocenić podobieństwo między obrazami (np. SSIM, LPIPS, PSNR)?",
+        "en": "Are you familiar with methods/metrics for assessing similarity between images (e.g., SSIM, LPIPS, PSNR)?"
+      },
+      "type": "radio",
+      "condition": { "field": "familiar_ml", "value": "y" },
+      "options": [
+        { "id": "y", "text": { "pl": "Tak", "en": "Yes" } },
+        { "id": "n", "text": { "pl": "Nie", "en": "No" } }
+      ]
+    },
+    {
+      "id": "experience_explainability",
+      "text": {
+        "pl": "Czy masz jakieś doświadczenie z metodami wyjaśniania decyzji modeli uczenia maszynowego?",
+        "en": "Do you have any experience with methods of explaining machine learning model decisions?"
+      },
+      "type": "radio",
+      "options": [
+        { "id": "y", "text": { "pl": "Tak", "en": "Yes" } },
+        { "id": "n", "text": { "pl": "Nie", "en": "No" } }
+      ]
+    },
+    {
+      "id": "experience_counterfactuals",
+      "text": {
+        "pl": "Czy twoje doświadczenie obejmuje kontrfakty?",
+        "en": "Have you had any experience with counterfactuals?"
+      },
+      "type": "radio",
+      "condition": { "field": "experience_explainability", "value": "y" },
+      "options": [
+        { "id": "y", "text": { "pl": "Tak", "en": "Yes" } },
+        { "id": "n", "text": { "pl": "Nie", "en": "No" } }
+      ]
+    },
+    {
+      "id": "need_explainability",
+      "text": {
+        "pl": "Czy widzisz potrzebę wyjaśniania decyzji podjętych przez modele uczenia maszynowego?",
+        "en": "Do you see a need for explaining decisions made by machine learning models?"
+      },
+      "type": "radio",
+      "options": [
+        { "id": "y", "text": { "pl": "Tak", "en": "Yes" } },
+        { "id": "n", "text": { "pl": "Nie", "en": "No" } }
+      ]
+    },
+    {
+      "id": "education",
+      "text": { "pl": "Wykształcenie", "en": "Education" },
+      "type": "select",
+      "options": [
+        { "id": "primary", "text": { "pl": "Podstawowe", "en": "Primary" } },
+        { "id": "secondary", "text": { "pl": "Średnie", "en": "Secondary" } },
+        {
+          "id": "higher",
+          "text": {
+            "pl": "Wyższe (Licencjat / Inżynier / Magister)",
+            "en": "Higher (Bachelor's or Master's degree)"
+          }
+        },
+        {
+          "id": "doctorate",
+          "text": {
+            "pl": "Stopień doktora lub wyższy",
+            "en": "Doctorate (PhD) or higher"
+          }
+        }
+      ]
+    },
+    {
+      "id": "education_field",
+      "text": { "pl": "Dziedzina wykształcenia", "en": "Field of study" },
+      "condition": {
+        "or": [
+          { "field": "education", "value": "higher" },
+          { "field": "education", "value": "doctorate" }
+        ]
+      },
+      "type": "select",
+      "options": [
+        {
+          "id": "engineering_tech",
+          "text": {
+            "pl": "Nauki inżynieryjne i techniczne",
+            "en": "Engineering and Technology"
+          }
+        },
+        {
+          "id": "exact_natural",
+          "text": {
+            "pl": "Nauki ścisłe i przyrodnicze",
+            "en": "Exact and Natural Sciences"
+          }
+        },
+        {
+          "id": "social",
+          "text": { "pl": "Nauki społeczne", "en": "Social Sciences" }
+        },
+        {
+          "id": "humanities",
+          "text": { "pl": "Nauki humanistyczne", "en": "Humanities" }
+        },
+        {
+          "id": "medical_health",
+          "text": {
+            "pl": "Nauki medyczne i o zdrowiu",
+            "en": "Medical and Health Sciences"
+          }
+        },
+        {
+          "id": "agricultural",
+          "text": { "pl": "Nauki rolnicze", "en": "Agricultural Sciences" }
+        },
+        {
+          "id": "arts",
+          "text": { "pl": "Sztuka", "en": "Arts" }
+        },
+        {
+          "id": "other",
+          "text": { "pl": "Inne", "en": "Other" }
+        }
+      ]
+    },
+    {
+      "id": "engineering_specialization",
+      "text": {
+        "pl": "Twoja specjalizacja inżynieryjna/techniczna",
+        "en": "Your engineering/technical specialization"
+      },
+      "condition": { "field": "education_field", "value": "engineering_tech" },
+      "type": "select",
+      "options": [
+        {
+          "id": "cs_se",
+          "text": {
+            "pl": "Informatyka / Inżynieria Oprogramowania",
+            "en": "Computer Science / Software Engineering"
+          }
+        },
+        {
+          "id": "ai_ds",
+          "text": {
+            "pl": "Sztuczna Inteligencja / Data Science",
+            "en": "Artificial Intelligence / Data Science"
+          }
+        },
+        {
+          "id": "automation_robotics",
+          "text": {
+            "pl": "Automatyka i Robotyka",
+            "en": "Automation and Robotics"
+          }
+        },
+        {
+          "id": "electronics_telecom",
+          "text": {
+            "pl": "Elektronika i Telekomunikacja",
+            "en": "Electronics and Telecommunications"
+          }
+        },
+        {
+          "id": "mechanical_civil",
+          "text": {
+            "pl": "Mechanika / Budownictwo / Architektura",
+            "en": "Mechanical / Civil Engineering / Architecture"
+          }
+        },
+        {
+          "id": "other_engineering",
+          "text": {
+            "pl": "Inna dziedzina inżynieryjna",
+            "en": "Other engineering field"
+          }
+        }
+      ]
+    }
+  ],
+  "ranking_questions": [
+    {
+      "id": "welcome",
+      "type": "info",
+      "shuffle": false,
+      "text": {
+        "pl": "Szanowny Uczestniku!",
+        "en": "Dear Participant!"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": {
+            "pl": "Zapraszamy do udziału w badaniu naukowym, którego celem jest ewaluacja wyjaśnień kontrfaktycznych z perspektywy użytkownika. Projekt badawczy prowadzony jest przez zespół z Wydziału Informatyki i Telekomunikacji Politechniki Poznańskiej.",
+            "en": "We invite you to participate in a scientific study aimed at evaluating counterfactual explanations from a user's perspective. The research project is conducted by a team from the Faculty of Computing and Telecommunications at Poznan University of Technology (PUT)."
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "pl": "Twoja opinia ma dla nas ogromne znaczenie. Gwarantujemy pełną anonimowość - wszystkie zebrane informacje posłużą nam wyłącznie do rzetelnej analizy naukowej. Wypełnienie kwestionariusza powinno zająć do 5 minut.",
+            "en": "Your feedback is of great importance to us. We guarantee complete anonymity - all collected data will be used exclusively for scientific analysis. Completing the questionnaire should take about 5 minutes."
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "pl": "Dziękujemy za zaangażowanie i wkład w nasz projekt.\nPiotr Balewski, Mateusz Bernart i Patryk Janiak",
+            "en": "Thank you for your engagement and contribution to our project.\nPiotr Balewski, Mateusz Bernart, and Patryk Janiak"
+          }
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "type": "info",
+      "shuffle": false,
+      "text": {
+        "pl": "Informacje wstępne - Jak komputer podejmuje decyzje?",
+        "en": "Introduction - How Does the Computer Make Decisions?"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": {
+            "pl": "<div style='background-color: #f0f8ff; padding: 15px; border-left: 4px solid #007bff; margin-top: 20px;'><b>Informacja:</b> Wskazałeś/aś wcześniej, że znasz już pojęcie wyjaśnień kontrfaktycznych. Jeśli czujesz się pewnie w tym temacie, możesz od razu przewinąć w dół i przejść do zadania. Poniższy tekst to tylko krótkie przypomnienie!</div>",
+            "en": "<div style='background-color: #f0f8ff; padding: 15px; border-left: 4px solid #007bff; margin-top: 20px;'><b>Note:</b> You indicated earlier that you are already familiar with counterfactual explanations. If you feel confident about this topic, feel free to scroll down and skip straight to the task. The text below is just a quick refresher!</div>"
+          },
+          "condition": { "field": "experience_counterfactuals", "value": "y" }
+        },
+        {
+          "type": "text",
+          "text": {
+            "pl": "<p>Wyobraź sobie program komputerowy, który nauczył się odczytywać odręcznie napisane cyfry, analizując tysiące przykładowych obrazków. Kiedy pokazujemy programowi nowy obrazek, przygląda się on rysunkowi i odgaduje, co to za cyfra.</p>",
+            "en": "<p>Imagine a computer program that has been taught to read handwritten numbers by looking at thousands of example pictures. When we show the program a new picture, it looks at the drawing and guesses which number it is.</p>"
+          }
+        },
+        {
+          "type": "image",
+          "url": "/ankieta/images/std_pred_pl.png",
+          "condition": { "field": "lang", "value": "pl" }
+        },
+        {
+          "type": "image",
+          "url": "/ankieta/images/std_pred_eng.png",
+          "condition": { "field": "lang", "value": "en" }
+        },
+        {
+          "type": "text",
+          "text": {
+            "pl": "<p>Znajomość ostatecznej odpowiedzi komputera jest bardzo przydatna, ale czasem musimy zrozumieć, <i>dlaczego</i> podjął on właśnie taką decyzję. Aby się tego dowiedzieć, możemy skorzystać z tak zwanego <b>wyjaśnienia kontrfaktycznego</b> (czyli opartego na pytaniu \"co by było, gdyby?\").</p><p>Takie wyjaśnienie to prosty sposób na zadanie komputerowi pytania: <i>Jaka jest najmniejsza zmiana, którą musielibyśmy wprowadzić na tym rysunku, abyś rozpoznał na nim zupełnie inną cyfrę?</i></p>",
+            "en": "<p>Knowing the computer's guess is helpful, but sometimes we need to understand <i>why</i> it made that choice. To figure this out, we can use something called a <b>counterfactual explanation</b>.</p><p>A counterfactual explanation is just a simple way of asking the computer a \"what if\" question: <i>What is the smallest change we could make to this drawing so that you guess a completely different number?</i></p>"
+          }
+        },
+        {
+          "type": "image",
+          "url": "/ankieta/images/counterfactuals_pl.png",
+          "condition": { "field": "lang", "value": "pl" }
+        },
+        {
+          "type": "image",
+          "url": "/ankieta/images/counterfactuals_eng.png",
+          "condition": { "field": "lang", "value": "en" }
+        },
+        {
+          "type": "text",
+          "text": {
+            "pl": "<p>Widząc dokładnie, co musiało się zmienić na obrazku, aby komputer zmienił swoją odpowiedź na cyfrę \"3\", możemy znacznie lepiej zrozumieć, na jakie elementy rysunku program zwracał uwagę od samego początku.</p>",
+            "en": "<p>By seeing exactly what needed to change for the computer to flip its answer to a '3', we can better understand what features it was focusing on in the first place.</p>"
+          }
+        }
+      ]
+    },
+    {
+      "id": "instructions",
+      "type": "info",
+      "shuffle": false,
+      "text": {
+        "pl": "Twoje Zadanie",
+        "en": "Your Task"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": {
+            "pl": "<p>W tej części ankiety przyjrzymy się programowi komputerowemu, który analizuje zdjęcia twarzy i rozpoznaje jedną konkretną rzecz: <b>czy osoba na zdjęciu się uśmiecha, czy nie.</b></p><p>Każdy przykład, który za chwilę zobaczysz, zaczyna się od oryginalnego zdjęcia twarzy osoby, która <b>się nie uśmiecha</b>. Program komputerowy otrzymał to zdjęcie i został poproszony o stworzenie wyjaśnień typu \"co by było, gdyby\". W efekcie wygenerował on kilka nowych, lekko zmodyfikowanych wersji tego samego zdjęcia, na których – według komputera – ta osoba już się uśmiecha.</p><p><b>Co musisz zrobić?</b></p><p>Twoim zadaniem będzie ocenienie tych zmodyfikowanych zdjęć i ułożenie ich w ranking (od najlepszego do najgorszego). Podejmując decyzję o kolejności, musisz wziąć pod uwagę <b>dwa równie ważne kryteria jednocześnie</b>:</p><ol><li><b>Podobieństwo do oryginału:</b> Jak bardzo zmodyfikowane zdjęcie nadal przypomina oryginalną twarz?</li><li><b>Widoczność uśmiechu:</b> Jak wyraźny i przekonujący jest uśmiech na nowym zdjęciu?</li></ol><p>Najwyższe miejsce w rankingu powinno zająć zdjęcie, które Twoim zdaniem najlepiej łączy obie te cechy – czyli zachowuje wygląd oryginalnej osoby, a jednocześnie widać na nim wyraźny, naturalny uśmiech.</p><div style='background-color: #f0f8ff; padding: 15px; border-left: 4px solid #007bff; margin-top: 20px;'><b>Ważna uwaga: W Twoim rankingu mogą pojawić się remisy!</b><br>Jeśli dojdziesz do wniosku, że dwa zmodyfikowane zdjęcia są równie dobre pod kątem obu powyższych kryteriów, możesz umieścić je na dokładnie tym samym miejscu w swoim zestawieniu. Nie musisz na siłę wybierać, które z nich jest lepsze.</div>",
+            "en": "<p>In this part of the survey, we will look at a computer program that analyzes photos of faces and recognizes one specific thing: <b>whether the person in the photo is smiling or not.</b></p><p>Every example you are about to see starts with an original photo of a person who is <b>not smiling</b>. The computer program was given this photo and asked to create \"what if\" explanations. As a result, it generated several new, slightly modified versions of the same photo where—according to the computer—the person is now smiling.</p><p><b>What do you need to do?</b></p><p>Your task is to evaluate these modified photos and arrange them in a ranking (from best to worst). When deciding on the order, you must consider <b>two equally important criteria simultaneously</b>:</p><ol><li><b>Similarity to the original:</b> How much does the modified photo still look like the original face?</li><li><b>Visibility of the smile:</b> How clear and convincing is the smile in the new photo?</li></ol><p>The highest place in the ranking should go to the photo that you think best combines both of these features—meaning it keeps the original person's appearance while showing a clear, natural smile.</p><div style='background-color: #f0f8ff; padding: 15px; border-left: 4px solid #007bff; margin-top: 20px;'><b>Important note: You can have ties in your ranking!</b><br>If you decide that two modified photos are equally good based on both of the criteria above, you can place them in the exact same spot in your ranking. You don't have to force a choice between them if they seem equally matched.</div>"
+          }
+        }
+      ]
+    },
+    {
+      "id": "q1",
+      "shuffle": true,
+      "text": {
+        "pl": "Uporządkuj obrazki tak, żeby na najwyższych pozycjach były te, które najlepiej spełniają dwa zadania - pokazują uśmiech i jednocześnie są podobne do oryginału.",
+        "en": "Order the images from best to worst based on two criteria - showing the smile and being similar to the original picture."
+      },
+      "reference_image": {
+        "id": "original",
+        "url": "/ankieta/images/CFE_1/CFE_1_original.png"
+      },
+      "images": [
+        { "id": "IP", "url": "/ankieta/images/CFE_1/CFE_1_IdealPoint.png" },
+        {
+          "id": "BP",
+          "url": "/ankieta/images/CFE_1/CFE_1_BalancedPoint.png"
+        },
+        { "id": "RP", "url": "/ankieta/images/CFE_1/CFE_1_RandomPoint.png" },
+        { "id": "topsis", "url": "/ankieta/images/CFE_1/CFE_1_TOPSIS.png" }
+      ]
+    },
+    {
+      "id": "q5",
+      "shuffle": true,
+      "text": {
+        "pl": "Uporządkuj obrazki tak, żeby na najwyższych pozycjach były te, które najlepiej spełniają dwa zadania - pokazują uśmiech i jednocześnie są podobne do oryginału.",
+        "en": "Order the images from best to worst based on two criteria - showing the smile and being similar to the original picture."
+      },
+      "reference_image": {
+        "id": "original",
+        "url": "/ankieta/images/CFE_5/CFE_5_original.png"
+      },
+      "images": [
+        { "id": "IP", "url": "/ankieta/images/CFE_5/CFE_5_IdealPoint.png" },
+        {
+          "id": "BP",
+          "url": "/ankieta/images/CFE_5/CFE_5_BalancedPoint.png"
+        },
+        { "id": "RP", "url": "/ankieta/images/CFE_5/CFE_5_RandomPoint.png" },
+        { "id": "topsis", "url": "/ankieta/images/CFE_5/CFE_5_TOPSIS.png" }
+      ]
+    },
+    {
+      "id": "q7",
+      "shuffle": true,
+      "text": {
+        "pl": "Uporządkuj obrazki tak, żeby na najwyższych pozycjach były te, które najlepiej spełniają dwa zadania - pokazują uśmiech i jednocześnie są podobne do oryginału.",
+        "en": "Order the images from best to worst based on two criteria - showing the smile and being similar to the original picture."
+      },
+      "reference_image": {
+        "id": "original",
+        "url": "/ankieta/images/CFE_7/CFE_7_original.png"
+      },
+      "images": [
+        { "id": "IP", "url": "/ankieta/images/CFE_7/CFE_7_IdealPoint.png" },
+        {
+          "id": "BP",
+          "url": "/ankieta/images/CFE_7/CFE_7_BalancedPoint.png"
+        },
+        { "id": "RP", "url": "/ankieta/images/CFE_7/CFE_7_RandomPoint.png" },
+        { "id": "topsis", "url": "/ankieta/images/CFE_7/CFE_7_TOPSIS.png" }
+      ]
+    },
+    {
+      "id": "q13",
+      "shuffle": true,
+      "text": {
+        "pl": "Uporządkuj obrazki tak, żeby na najwyższych pozycjach były te, które najlepiej spełniają dwa zadania - pokazują uśmiech i jednocześnie są podobne do oryginału.",
+        "en": "Order the images from best to worst based on two criteria - showing the smile and being similar to the original picture."
+      },
+      "reference_image": {
+        "id": "original",
+        "url": "/ankieta/images/CFE_13/CFE_13_original.png"
+      },
+      "images": [
+        { "id": "IP", "url": "/ankieta/images/CFE_13/CFE_13_IdealPoint.png" },
+        {
+          "id": "BP",
+          "url": "/ankieta/images/CFE_13/CFE_13_BalancedPoint.png"
+        },
+        { "id": "RP", "url": "/ankieta/images/CFE_13/CFE_13_RandomPoint.png" },
+        { "id": "topsis", "url": "/ankieta/images/CFE_13/CFE_13_TOPSIS.png" }
+      ]
+    },
+    {
+      "id": "q15",
+      "shuffle": true,
+      "text": {
+        "pl": "Uporządkuj obrazki tak, żeby na najwyższych pozycjach były te, które najlepiej spełniają dwa zadania - pokazują uśmiech i jednocześnie są podobne do oryginału.",
+        "en": "Order the images from best to worst based on two criteria - showing the smile and being similar to the original picture."
+      },
+      "reference_image": {
+        "id": "original",
+        "url": "/ankieta/images/CFE_15/CFE_15_original.png"
+      },
+      "images": [
+        { "id": "IP", "url": "/ankieta/images/CFE_15/CFE_15_IdealPoint.png" },
+        {
+          "id": "BP",
+          "url": "/ankieta/images/CFE_15/CFE_15_BalancedPoint.png"
+        },
+        { "id": "RP", "url": "/ankieta/images/CFE_15/CFE_15_RandomPoint.png" },
+        { "id": "topsis", "url": "/ankieta/images/CFE_15/CFE_15_TOPSIS.png" }
+      ]
+    }
+  ],
+  "outro": [
+    {
+      "id": "q_most_important_criterion",
+      "text": {
+        "pl": "Co miało największy wpływ na Twoją ocenę kontrfaktów?",
+        "en": "What had the greatest impact on your evaluation of the counterfactuals?"
+      },
+      "type": "checkbox",
+      "optional": true,
+      "options": [
+        {
+          "id": "similarity",
+          "text": {
+            "pl": "Podobieństwo do oryginału",
+            "en": "Similarity to the original"
+          }
+        },
+        {
+          "id": "smile",
+          "text": {
+            "pl": "Widoczność uśmiechu",
+            "en": "Visibility of the smile"
+          }
+        },
+        {
+          "id": "other",
+          "text": { "pl": "Inne kryterium", "en": "Other criterion" }
+        }
+      ]
+    },
+    {
+      "id": "q_alternative_criteria",
+      "type": "open",
+      "optional": true,
+      "condition": { "field": "q_most_important_criterion", "value": "other" },
+      "text": {
+        "pl": "Jakie to było kryterium?",
+        "en": "What was that criterion?"
+      }
+    }
+  ]
+}
