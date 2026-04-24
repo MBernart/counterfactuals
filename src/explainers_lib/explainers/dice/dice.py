@@ -84,7 +84,7 @@ class DiceExplainer(Explainer):
         Generate counterfactuals for multiple instances.
         """
         counterfactuals = []
-        y_target = y_desired or self.desired_class or 1
+        y_target = y_desired if y_desired is not None else self.desired_class
         
         df_raw = data.df.reset_index(drop=True)
         for col in data.continuous_features:
@@ -110,7 +110,7 @@ class DiceExplainer(Explainer):
         """
         instance_df = instance_ds.df.copy()
         original_vector = instance_ds.data[0]
-        target = target_class or self.desired_class or 1
+        target = target_class if target_class is not None else self.desired_class
         return self._generate_cf(instance_df, original_vector, model, target)
 
     def _generate_cf(
@@ -118,7 +118,7 @@ class DiceExplainer(Explainer):
         instance_df: pd.DataFrame, 
         original_vector: np.ndarray, 
         model: Model, 
-        target_class: int
+        target_class: Optional[int]
     ) -> List[Counterfactual]:
         """
         Helper to generate num_cfs counterfactuals using DiCE.
@@ -127,7 +127,7 @@ class DiceExplainer(Explainer):
             dice_exp = self.dice.generate_counterfactuals(
                 instance_df,
                 total_CFs=self.num_cfs,
-                desired_class=target_class,
+                desired_class="opposite" if target_class is None else target_class,
                 posthoc_sparsity_param=self.posthoc_sparsity_param,
             )
             
