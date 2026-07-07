@@ -1,0 +1,145 @@
+lang,familiar_ml,familiar_metrics,experience_explainability,experience_counterfactuals,need_explainability,education,education_field,engineering_specialization,q1_IP_pos,q1_BP_pos,q1_RP_pos,q1_topsis_pos,q5_IP_pos,q5_BP_pos,q5_RP_pos,q5_topsis_pos,q7_IP_pos,q7_BP_pos,q7_RP_pos,q7_topsis_pos,q13_IP_pos,q13_BP_pos,q13_RP_pos,q13_topsis_pos,q15_IP_pos,q15_BP_pos,q15_RP_pos,q15_topsis_pos,q_most_important_criterion,q_alternative_criteria,q15_dupe_dist
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,3.0,4.0,1.0,2.0,3.0,1.0,4.0,2.0,2.0,1.0,3.0,2.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,No,,No,,No,Secondary,,,,,,,1.0,2.0,4.0,3.0,1.0,3.0,4.0,2.0,2.0,1.0,4.0,3.0,,,,,other,Nie zastanawiałam się nad tym,
+pl,Yes,No,Yes,No,Yes,Doctorate (PhD) or higher,Engineering and Technology,Computer Science / Software Engineering,2.0,3.0,1.0,1.0,1.0,2.0,4.0,3.0,3.0,3.0,2.0,1.0,2.0,1.0,3.0,3.0,1.0,2.0,1.0,1.0,other,,0.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,1.0,2.0,3.0,4.0,3.0,2.0,4.0,1.0,3.0,1.0,4.0,2.0,,,,,,,,,similarity,,
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,1.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,Yes,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,1.0,3.0,2.0,2.0,2.0,1.0,4.0,2.0,1.0,3.0,3.0,2.0,2.0,1.0,4.0,4.0,1.0,4.0,2.0,1.0,smile,,0.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Medical and Health Sciences,,1.0,4.0,3.0,2.0,3.0,1.0,4.0,2.0,2.0,1.0,4.0,3.0,1.0,2.0,3.0,4.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,No,,No,,Yes,Primary,,,1.0,4.0,3.0,2.0,1.0,3.0,4.0,2.0,3.0,4.0,2.0,1.0,2.0,1.0,3.0,4.0,2.0,4.0,3.0,1.0,similarity;smile,,1.0
+pl,Yes,No,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,2.0,4.0,4.0,4.0,4.0,3.0,4.0,2.0,3.0,2.0,4.0,1.0,4.0,1.0,4.0,4.0,2.0,4.0,1.0,1.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,4.0,3.0,3.0,2.0,3.0,4.0,1.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,4.0,2.0,4.0,3.0,2.0,similarity,,0.0
+pl,No,,No,,Yes,Secondary,,,3.0,4.0,2.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,4.0,1.0,2.0,3.0,2.0,3.0,1.0,4.0,2.0,4.0,1.0,3.0,3.0,1.0,1.0,1.0,3.0,1.0,4.0,2.0,similarity,,1.0
+pl,No,,No,,Yes,Secondary,,,3.0,4.0,2.0,1.0,2.0,3.0,4.0,1.0,2.0,4.0,3.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,3.0,2.0,2.0,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,No,Yes,No,No,Secondary,,,4.0,3.0,2.0,1.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,3.0,4.0,2.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,1.0,4.0,3.0,2.0,3.0,1.0,2.0,similarity,,0.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,3.0,2.0,2.0,3.0,2.0,4.0,1.0,1.0,3.0,4.0,2.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,4.0,1.0,3.0,2.0,2.0,4.0,1.0,3.0,4.0,2.0,1.0,3.0,3.0,4.0,1.0,2.0,3.0,1.0,2.0,4.0,similarity;smile,,1.0
+pl,No,,No,,Yes,Secondary,,,3.0,4.0,1.0,2.0,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,1.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Secondary,,,1.0,4.0,2.0,3.0,1.0,3.0,4.0,2.0,,,,,1.0,2.0,4.0,3.0,,,,,similarity,,
+pl,Yes,No,No,,Yes,Secondary,,,3.0,4.0,2.0,2.0,3.0,4.0,4.0,2.0,2.0,4.0,3.0,1.0,4.0,4.0,4.0,4.0,1.0,4.0,3.0,1.0,similarity,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,3.0,4.0,1.0,2.0,2.0,3.0,4.0,1.0,3.0,1.0,4.0,2.0,1.0,2.0,4.0,3.0,1.0,4.0,2.0,2.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,3.0,2.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,4.0,2.0,2.0,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity,,0.0
+pl,No,,No,,Yes,Secondary,,,2.0,4.0,2.0,1.0,2.0,2.0,3.0,1.0,4.0,3.0,2.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Secondary,,,1.0,4.0,2.0,2.0,2.0,3.0,4.0,1.0,,,,,2.0,1.0,4.0,4.0,,,,,similarity;smile,,
+pl,Yes,No,No,,Yes,Secondary,,,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,1.0,4.0,3.0,2.0,1.0,2.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,3.0,2.0,1.0,1.0,3.0,4.0,2.0,1.0,1.0,2.0,2.0,1.0,2.0,4.0,3.0,2.0,3.0,1.0,2.0,smile,,0.0
+pl,Yes,No,Yes,Yes,Yes,Secondary,,,3.0,4.0,1.0,2.0,1.0,3.0,4.0,2.0,2.0,4.0,3.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,4.0,1.0,3.0,2.0,3.0,4.0,2.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity;smile,,1.0
+pl,Yes,No,Yes,No,Yes,Secondary,,,1.0,2.0,4.0,4.0,3.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,2.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,1.0,4.0,2.0,3.0,2.0,1.0,4.0,3.0,1.0,1.0,4.0,1.0,1.0,2.0,3.0,4.0,1.0,4.0,1.0,1.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,4.0,3.0,1.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,1.0,3.0,3.0,4.0,3.0,2.0,1.0,3.0,2.0,1.0,4.0,1.0,2.0,1.0,1.0,4.0,2.0,1.0,3.0,similarity;smile,,1.0
+pl,Yes,No,Yes,No,Yes,Secondary,,,1.0,2.0,3.0,4.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,3.0,1.0,2.0,3.0,3.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,Yes,No,Yes,No,Yes,Secondary,,,3.0,4.0,2.0,2.0,2.0,3.0,4.0,1.0,2.0,2.0,4.0,3.0,3.0,2.0,4.0,4.0,3.0,4.0,1.0,2.0,similarity;smile,,1.0
+pl,Yes,No,Yes,No,Yes,Secondary,,,1.0,3.0,4.0,2.0,2.0,3.0,4.0,1.0,3.0,1.0,4.0,2.0,2.0,1.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity,,1.0
+pl,No,,No,,No,Secondary,,,1.0,4.0,2.0,3.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,2.0,3.0,4.0,1.0,3.0,4.0,2.0,2.0,1.0,4.0,3.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,Yes,No,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,4.0,3.0,2.0,2.0,1.0,4.0,3.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,Yes,No,Yes,Yes,Yes,Doctorate (PhD) or higher,Engineering and Technology,Artificial Intelligence / Data Science,2.0,3.0,1.0,1.0,1.0,3.0,4.0,2.0,3.0,3.0,2.0,1.0,2.0,1.0,3.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,2.0,3.0,1.0,1.0,,,,,2.0,2.0,3.0,1.0,,,,,2.0,3.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,3.0,4.0,1.0,2.0,2.0,1.0,3.0,4.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,No,,No,,No,Secondary,,,,,,,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,,,,,3.0,4.0,1.0,2.0,similarity,,1.0
+pl,Yes,No,Yes,Yes,Yes,Doctorate (PhD) or higher,Engineering and Technology,Artificial Intelligence / Data Science,,,,,1.0,3.0,4.0,2.0,,,,,1.0,2.0,4.0,3.0,2.0,3.0,1.0,2.0,similarity;smile;other,Ocena realności zaproponowanego zdjęcia - na ile odpowiada rzeczywistości = więcej niż proste podobienstwo,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,3.0,1.0,4.0,2.0,3.0,1.0,4.0,4.0,2.0,4.0,1.0,2.0,similarity,,0.0
+pl,Yes,No,Yes,No,Yes,Doctorate (PhD) or higher,Engineering and Technology,Artificial Intelligence / Data Science,1.0,3.0,2.0,2.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,3.0,3.0,2.0,3.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Doctorate (PhD) or higher,Engineering and Technology,Artificial Intelligence / Data Science,3.0,4.0,1.0,1.0,2.0,3.0,4.0,1.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,4.0,1.0,4.0,2.0,1.0,similarity;smile,,0.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,4.0,1.0,2.0,2.0,4.0,2.0,1.0,3.0,3.0,2.0,1.0,4.0,2.0,3.0,1.0,1.0,3.0,1.0,2.0,4.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,3.0,2.0,2.0,1.0,3.0,4.0,2.0,2.0,2.0,3.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,3.0,4.0,1.0,3.0,similarity,,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,1.0,4.0,2.0,2.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,4.0,3.0,1.0,1.0,2.0,3.0,4.0,1.0,1.0,3.0,4.0,1.0,4.0,2.0,4.0,4.0,2.0,4.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,Yes,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,1.0,3.0,4.0,2.0,4.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,,,,,2.0,1.0,4.0,3.0,1.0,3.0,4.0,2.0,,,,,2.0,4.0,3.0,1.0,similarity;smile,,1.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,3.0,2.0,2.0,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,3.0,1.0,2.0,similarity,,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Humanities,,,,,,2.0,2.0,3.0,1.0,1.0,2.0,3.0,1.0,1.0,2.0,4.0,3.0,,,,,similarity;smile,,
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,3.0,2.0,4.0,1.0,3.0,3.0,4.0,4.0,1.0,4.0,2.0,1.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,1.0,3.0,2.0,2.0,1.0,2.0,3.0,3.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity,,0.0
+pl,Yes,No,Yes,No,Yes,Doctorate (PhD) or higher,Engineering and Technology,Artificial Intelligence / Data Science,2.0,3.0,1.0,1.0,1.0,3.0,4.0,2.0,3.0,4.0,2.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,1.0,1.0,similarity;smile;other,"Co do pytania ""Co miało największy wpływ"" – skoro w treści polecenia było napisane; żeby równocześnie uwzględniać OBA te kryteria (podobieństwo do oryginału i widoczność uśmiechu); raczej trudno zaznaczyć jedno z nich jako ""największy wpływ"".  Co do ""Inne kryterium"" (ale nie ""największy wpływ""): jakiś pomniejszy wpływ może mieć otoczenie i techniczny charakter zdjęcia. Np. identyczna twarz ale jaśniejszy lub ciemniejszy obrazek; albo twarz mniej lub bardziej ostra; albo mniej lub bardziej kontrastowa – niższa jasność; brak ostrości itp. mogą przesuwać preferencje w stronę ""brak uśmiechu"": uśmiech był oryginalnie taki sam; ale na tym konkretnym obrazku jest dla człowieka mniej wyraźnie widoczny.  Ogólna obserwacja: całe ""tło teoretyczne"" ankiety nie miało wpływu na faktyczne zadanie ankietowe (czyli na postrzegane podobieństwo zdjęć i widoczność uśmiechów). Kwestia; czy ankietowany wie czym jest kontrfakt albo czy zna problematykę wyjaśnialności w UM nie powinna wpływać na decyzje w tak zbudowanej ankiecie; ale może świadome problematyki osoby poświęcą zadaniu średnio więcej uwagi i staranności – większa motywacja bo rozumieją; czemu ankieta służy? Dobrze; że te początkowe pytania są jako pytania kontrolne; żeby wykrywać takie potencjalne zależności.",0.0
+pl,No,,No,,Yes,Primary,,,2.0,4.0,1.0,3.0,1.0,2.0,4.0,3.0,4.0,3.0,2.0,1.0,2.0,1.0,4.0,4.0,2.0,4.0,4.0,1.0,smile,,1.0
+pl,No,,No,,Yes,Primary,,,1.0,4.0,2.0,2.0,1.0,3.0,4.0,1.0,1.0,1.0,4.0,2.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,2.0,,,0.0
+pl,No,,No,,Yes,Secondary,,,1.0,3.0,2.0,2.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,3.0,3.0,1.0,3.0,2.0,2.0,similarity,,1.0
+pl,No,,No,,Yes,Secondary,,,1.0,4.0,3.0,2.0,3.0,4.0,4.0,1.0,1.0,1.0,3.0,2.0,3.0,3.0,4.0,4.0,2.0,4.0,1.0,2.0,similarity,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Secondary,,,1.0,3.0,4.0,2.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,Yes,No,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,1.0,4.0,2.0,3.0,1.0,3.0,4.0,2.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,2.0,similarity,,0.0
+pl,No,,No,,No,Secondary,,,1.0,4.0,2.0,3.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+en,Yes,No,No,,Yes,Secondary,,,1.0,4.0,2.0,3.0,1.0,3.0,4.0,2.0,3.0,2.0,4.0,1.0,3.0,1.0,4.0,4.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Other,,1.0,4.0,2.0,3.0,2.0,3.0,4.0,1.0,1.0,4.0,3.0,2.0,2.0,1.0,4.0,3.0,3.0,4.0,1.0,2.0,similarity;smile,,1.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Humanities,,,,,,1.0,3.0,4.0,2.0,4.0,2.0,3.0,1.0,2.0,1.0,3.0,3.0,,,,,similarity;smile,,
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Humanities,,1.0,4.0,3.0,3.0,1.0,2.0,4.0,3.0,1.0,2.0,4.0,3.0,1.0,2.0,4.0,4.0,2.0,4.0,1.0,2.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,Yes,No,Yes,Yes,Yes,Doctorate (PhD) or higher,Engineering and Technology,Artificial Intelligence / Data Science,,,,,2.0,2.0,3.0,1.0,1.0,2.0,3.0,3.0,2.0,1.0,3.0,3.0,,,,,other,przetarg między obiema kryteriami: odległość do mojego wyobrażeniu o obrazku który jest jak najbliżej do oryginału; który możemy zaklasyfikować jako uśmiech,
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,1.0,3.0,2.0,2.0,1.0,3.0,4.0,2.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,1.0,4.0,2.0,3.0,3.0,2.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity;smile,,0.0
+pl,Yes,Yes,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,3.0,4.0,2.0,1.0,1.0,3.0,4.0,2.0,2.0,4.0,3.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,1.0,smile,,1.0
+en,Yes,No,No,,Yes,Secondary,,,,,,,,,,,1.0,1.0,4.0,2.0,1.0,1.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,4.0,2.0,3.0,1.0,3.0,4.0,2.0,,,,,,,,,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,1.0,2.0,4.0,3.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,2.0,4.0,1.0,4.0,4.0,3.0,4.0,1.0,2.0,similarity,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Social Sciences,,1.0,3.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,3.0,3.0,1.0,2.0,1.0,1.0,similarity,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,3.0,4.0,2.0,1.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,2.0,2.0,1.0,similarity,,0.0
+pl,Yes,No,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Automation and Robotics,1.0,4.0,2.0,3.0,2.0,1.0,4.0,3.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Agricultural Sciences,,1.0,4.0,3.0,2.0,2.0,1.0,4.0,3.0,2.0,1.0,4.0,3.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,No,,No,,No,Secondary,,,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,1.0,3.0,4.0,2.0,3.0,1.0,4.0,4.0,1.0,4.0,1.0,2.0,similarity;smile,,1.0
+en,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Mechanical / Civil Engineering / Architecture,2.0,4.0,1.0,3.0,2.0,1.0,4.0,3.0,2.0,3.0,4.0,1.0,,,,,,,,,similarity;smile;other,,
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Medical and Health Sciences,,3.0,4.0,2.0,1.0,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,1.0,3.0,2.0,2.0,1.0,2.0,4.0,3.0,1.0,1.0,3.0,2.0,1.0,1.0,3.0,2.0,3.0,4.0,1.0,2.0,similarity,,1.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,4.0,4.0,2.0,2.0,1.0,4.0,1.0,3.0,1.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,4.0,1.0,1.0,similarity;smile;other,Koncertowałem się na linii włosów oraz innych cechach szczególnych pierwowzoru.,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,1.0,2.0,3.0,4.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,4.0,3.0,3.0,4.0,1.0,2.0,similarity,,1.0
+pl,Yes,No,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,4.0,1.0,2.0,3.0,2.0,4.0,1.0,3.0,,,,,,,,,4.0,1.0,2.0,3.0,similarity;smile,,1.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,1.0,4.0,2.0,3.0,1.0,3.0,4.0,2.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,2.0,smile,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,1.0,similarity,,0.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Other,,1.0,3.0,2.0,2.0,2.0,1.0,3.0,3.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,3.0,4.0,2.0,1.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,3.0,1.0,smile,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,2.0,4.0,3.0,3.0,2.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,Yes,No,No,,No,Secondary,,,2.0,3.0,1.0,1.0,1.0,3.0,4.0,2.0,2.0,1.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity,,0.0
+pl,No,,No,,No,Secondary,,,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,3.0,2.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,3.0,4.0,2.0,1.0,1.0,2.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity,,1.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,2.0,2.0,1.0,1.0,2.0,2.0,3.0,1.0,1.0,2.0,3.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,1.0,1.0,similarity;smile,,0.0
+pl,No,,No,,No,Secondary,,,,,,,2.0,3.0,4.0,1.0,2.0,4.0,1.0,3.0,,,,,2.0,4.0,1.0,3.0,smile,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,1.0,2.0,4.0,3.0,3.0,2.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,4.0,4.0,3.0,4.0,1.0,2.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,2.0,3.0,4.0,1.0,1.0,3.0,4.0,2.0,4.0,3.0,2.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity,,0.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,3.0,4.0,2.0,1.0,1.0,3.0,4.0,2.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,3.0,4.0,4.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,3.0,3.0,2.0,4.0,4.0,1.0,4.0,3.0,1.0,similarity;smile,,0.0
+pl,Yes,No,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,2.0,4.0,3.0,1.0,similarity,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,2.0,3.0,1.0,1.0,,,,,1.0,2.0,4.0,3.0,2.0,1.0,4.0,3.0,,,,,similarity;smile,,
+pl,Yes,No,No,,Yes,Higher (Bachelor's or Master's degree),Arts,,1.0,2.0,2.0,2.0,2.0,2.0,3.0,1.0,2.0,1.0,3.0,1.0,1.0,1.0,3.0,2.0,1.0,3.0,2.0,1.0,similarity;smile,,0.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,4.0,3.0,3.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,4.0,4.0,4.0,4.0,1.0,4.0,1.0,1.0,similarity,,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Arts,,1.0,1.0,4.0,3.0,1.0,4.0,4.0,3.0,2.0,1.0,3.0,4.0,4.0,1.0,4.0,4.0,2.0,4.0,1.0,1.0,similarity,,1.0
+pl,No,,No,,No,Primary,,,1.0,2.0,3.0,4.0,1.0,2.0,4.0,3.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,Yes,Yes,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,3.0,4.0,1.0,2.0,3.0,2.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,Yes,No,No,,Yes,Secondary,,,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,3.0,4.0,1.0,2.0,similarity;smile,,1.0
+pl,No,,No,,No,Secondary,,,3.0,4.0,2.0,1.0,1.0,3.0,4.0,2.0,2.0,2.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,1.0,3.0,2.0,2.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,3.0,3.0,2.0,3.0,1.0,2.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,3.0,4.0,2.0,1.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,4.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,3.0,4.0,1.0,1.0,1.0,2.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,4.0,1.0,4.0,3.0,1.0,similarity,,0.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Other,,,,,,2.0,1.0,4.0,3.0,1.0,2.0,3.0,1.0,,,,,1.0,3.0,2.0,1.0,similarity,,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,2.0,4.0,4.0,4.0,4.0,3.0,4.0,4.0,2.0,4.0,4.0,1.0,3.0,4.0,4.0,4.0,1.0,4.0,4.0,2.0,similarity;smile,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,4.0,3.0,1.0,2.0,3.0,1.0,4.0,2.0,,,,,,,,,2.0,4.0,3.0,1.0,smile,,1.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,3.0,4.0,1.0,2.0,2.0,3.0,4.0,1.0,4.0,3.0,2.0,1.0,2.0,1.0,3.0,3.0,1.0,4.0,3.0,2.0,similarity;smile,,1.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Social Sciences,,1.0,4.0,3.0,2.0,1.0,3.0,4.0,2.0,1.0,3.0,4.0,2.0,2.0,3.0,4.0,3.0,1.0,4.0,2.0,1.0,similarity;smile,,0.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,,,,,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,4.0,3.0,,,,,similarity,,
+pl,No,,No,,Yes,Secondary,,,2.0,2.0,1.0,1.0,1.0,1.0,2.0,2.0,3.0,2.0,3.0,1.0,2.0,2.0,3.0,3.0,1.0,3.0,1.0,1.0,similarity,,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Other,,1.0,4.0,2.0,3.0,2.0,3.0,4.0,1.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,4.0,1.0,4.0,1.0,1.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Mechanical / Civil Engineering / Architecture,3.0,3.0,2.0,1.0,2.0,2.0,3.0,1.0,3.0,1.0,4.0,2.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,No,,No,,Yes,Secondary,,,1.0,3.0,2.0,2.0,3.0,2.0,4.0,1.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,1.0,3.0,2.0,1.0,similarity;smile,,0.0
+pl,No,,No,,Yes,Secondary,,,1.0,4.0,2.0,3.0,2.0,3.0,4.0,1.0,1.0,2.0,4.0,3.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Exact and Natural Sciences,,1.0,3.0,4.0,2.0,1.0,3.0,4.0,2.0,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,Yes,No,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,2.0,4.0,1.0,1.0,1.0,3.0,4.0,2.0,1.0,1.0,4.0,1.0,2.0,1.0,4.0,4.0,1.0,4.0,1.0,1.0,similarity;smile,,0.0
+pl,Yes,No,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,3.0,4.0,2.0,1.0,2.0,3.0,4.0,1.0,,,,,2.0,1.0,4.0,3.0,,,,,similarity;smile,,
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Electronics and Telecommunications,1.0,4.0,3.0,2.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity;smile,,1.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,4.0,2.0,3.0,2.0,3.0,4.0,1.0,3.0,1.0,4.0,2.0,1.0,2.0,4.0,3.0,3.0,4.0,1.0,2.0,similarity,,1.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,1.0,3.0,2.0,4.0,1.0,3.0,4.0,2.0,1.0,2.0,4.0,3.0,2.0,1.0,4.0,3.0,1.0,4.0,3.0,2.0,similarity,,1.0
+pl,No,,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Other engineering field,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,1.0,2.0,4.0,3.0,2.0,1.0,3.0,4.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,2.0,1.0,4.0,3.0,2.0,3.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,3.0,4.0,1.0,2.0,similarity;smile,,1.0
+pl,Yes,No,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,3.0,4.0,2.0,2.0,4.0,4.0,4.0,3.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,4.0,2.0,2.0,similarity,,1.0
+pl,No,,No,,Yes,Primary,,,,,,,1.0,3.0,4.0,2.0,,,,,2.0,1.0,4.0,3.0,3.0,4.0,1.0,2.0,smile,,1.0
+en,Yes,No,No,,No,Higher (Bachelor's or Master's degree),Engineering and Technology,Computer Science / Software Engineering,3.0,4.0,2.0,1.0,1.0,2.0,4.0,3.0,4.0,3.0,2.0,1.0,2.0,1.0,4.0,3.0,3.0,4.0,1.0,2.0,smile,,1.0
+pl,Yes,Yes,Yes,Yes,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Artificial Intelligence / Data Science,1.0,3.0,2.0,2.0,2.0,3.0,4.0,1.0,4.0,1.0,3.0,2.0,1.0,2.0,4.0,3.0,2.0,3.0,1.0,2.0,similarity;smile,,0.0
+pl,Yes,No,Yes,No,Yes,Higher (Bachelor's or Master's degree),Engineering and Technology,Automation and Robotics,1.0,4.0,3.0,2.0,3.0,2.0,4.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,No,,No,,Yes,Primary,,,1.0,3.0,4.0,2.0,4.0,2.0,3.0,1.0,1.0,3.0,4.0,2.0,2.0,1.0,4.0,3.0,2.0,4.0,1.0,3.0,similarity,,1.0
+pl,Yes,No,Yes,Yes,Yes,Doctorate (PhD) or higher,Engineering and Technology,Computer Science / Software Engineering,3.0,2.0,1.0,1.0,1.0,2.0,3.0,1.0,1.0,2.0,2.0,1.0,2.0,1.0,4.0,3.0,1.0,2.0,1.0,1.0,similarity;smile,,0.0
